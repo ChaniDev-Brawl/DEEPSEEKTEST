@@ -1,0 +1,2443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="screen-orientation" content="landscape">
+<meta name="x5-orientation" content="landscape">
+<meta name="full-screen" content="yes">
+<title>ISO CITY v2.2 Flash Lite</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    height:100%;width:100%;overflow:hidden;background:#05080e;
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:#e8eef7;-webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;touch-action:none;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #game{position:fixed;inset:0;display:block;touch-action:none;cursor:crosshair}
+
+  #hud{
+    position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+    display:flex;gap:2px;padding:5px;z-index:10;
+    background:rgba(10,16,26,.85);
+    border:1px solid rgba(120,170,255,.14);
+    border-radius:12px;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    box-shadow:0 6px 20px rgba(0,0,0,.5);
+    max-width:calc(100vw - 16px);
+  }
+  .stat{min-width:56px;padding:1px 7px;text-align:center}
+  .stat b{display:block;font-size:13px;font-weight:700}
+  .stat span{display:block;font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:#6f8299;margin-top:1px}
+  #money{color:#6ee7a0}
+  #pop{color:#7cc4ff}
+  #inc{color:#ffd166}
+  #clock{color:#c8b3ff}
+  .flash b{animation:flashRed .32s ease}
+  @keyframes flashRed{0%,100%{color:inherit}50%{color:#ff5b5b !important}}
+
+  #toolbar{
+    position:fixed;left:calc(6px + env(safe-area-inset-left));top:50%;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:2px;padding:5px;z-index:10;
+    background:rgba(10,16,26,.85);
+    border:1px solid rgba(120,170,255,.14);
+    border-radius:14px;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    max-height:calc(100vh - 30px);overflow-y:auto;scrollbar-width:none;
+    box-shadow:0 6px 20px rgba(0,0,0,.5);
+    width:66px;
+  }
+  #toolbar::-webkit-scrollbar{display:none}
+  .tool{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    width:54px;height:46px;gap:1px;flex:0 0 auto;
+    background:transparent;border:1px solid transparent;border-radius:9px;
+    color:#93a6bd;font:inherit;cursor:pointer;position:relative;
+    transition:background .12s,color .12s,border-color .12s;
+    padding:0;
+  }
+  .tool:hover{background:rgba(255,255,255,.07);color:#dbe7f7}
+  .tool:active{transform:scale(.94)}
+  .tool.active{
+    background:rgba(80,160,255,.20);border-color:rgba(90,170,255,.6);color:#fff;
+    box-shadow:inset 0 0 14px rgba(80,160,255,.25);
+  }
+  .tool.capital.active{
+    background:rgba(255,180,80,.24);border-color:rgba(255,200,100,.7);
+  }
+  .tool.locked{opacity:.42}
+  .tool i{font-style:normal;font-size:15px;line-height:1}
+  .tool span{font-size:7.5px;letter-spacing:.03em;line-height:1}
+  .tool em{font-style:normal;font-size:7.5px;color:#5fbf8a;font-weight:600;line-height:1}
+  .tool .key{
+    position:absolute;top:1px;right:3px;font-size:7px;color:#4a5a70;
+    background:rgba(0,0,0,.5);border-radius:2px;padding:0 2px;font-weight:700;
+  }
+  .tool-divider{height:1px;background:rgba(120,170,255,.14);margin:2px 3px;flex:0 0 auto}
+  .tool-cat{
+    font-size:6.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:#4a5a70;text-align:center;padding:1px 0;flex:0 0 auto;
+  }
+
+  #actions{
+    position:fixed;top:calc(6px + env(safe-area-inset-top));right:calc(6px + env(safe-area-inset-right));
+    display:flex;gap:4px;z-index:10;
+  }
+  .abtn{
+    width:34px;height:34px;border-radius:9px;
+    background:rgba(10,16,26,.85);border:1px solid rgba(120,170,255,.16);
+    color:#93a6bd;cursor:pointer;font-size:14px;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }
+  .abtn:hover{background:rgba(80,160,255,.2);color:#fff}
+  .abtn:active{transform:scale(.92)}
+
+  #zoomctl{
+    position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));
+    right:calc(6px + env(safe-area-inset-right));
+    display:flex;flex-direction:column;gap:3px;z-index:10;
+  }
+  #rotctl{
+    position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));
+    right:calc(50px + env(safe-area-inset-right));
+    display:flex;flex-direction:column;gap:3px;z-index:10;
+  }
+  .zbtn,.rbtn{
+    width:34px;height:34px;border-radius:9px;
+    background:rgba(10,16,26,.85);border:1px solid rgba(120,170,255,.16);
+    color:#93a6bd;cursor:pointer;font-size:14px;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+  }
+  .zbtn:hover,.rbtn:hover{background:rgba(80,160,255,.2);color:#fff}
+  .zbtn:active,.rbtn:active{transform:scale(.92)}
+
+  #compass{
+    position:fixed;top:calc(6px + env(safe-area-inset-top));left:calc(6px + env(safe-area-inset-left));
+    width:38px;height:38px;z-index:10;
+    background:rgba(10,16,26,.85);border:1px solid rgba(120,170,255,.16);
+    border-radius:50%;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px rgba(0,0,0,.4);cursor:pointer;
+  }
+  #compassN{
+    position:absolute;top:1px;left:50%;transform:translateX(-50%);
+    font-size:7px;font-weight:700;color:#ff8080;letter-spacing:.05em;
+  }
+  #compassNeedle{
+    width:2px;height:13px;
+    background:linear-gradient(180deg,#ff5555 0%,#ff5555 50%,#5aa0ff 50%,#5aa0ff 100%);
+    border-radius:2px;
+  }
+
+  #toasts{
+    position:fixed;top:calc(50px + env(safe-area-inset-top));right:calc(6px + env(safe-area-inset-right));
+    display:flex;flex-direction:column;gap:4px;z-index:20;pointer-events:none;
+    align-items:flex-end;max-width:calc(100vw - 90px);
+  }
+  .toast{
+    background:rgba(20,28,42,.95);border:1px solid rgba(120,170,255,.2);
+    padding:6px 11px;border-radius:9px;font-size:10px;color:#dbe7f7;
+    box-shadow:0 5px 15px rgba(0,0,0,.5);
+    animation:toastIn .3s ease,toastOut .3s ease 2.2s forwards;
+    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    display:flex;align-items:center;gap:5px;
+  }
+  .toast.warn{border-color:rgba(255,120,120,.4);color:#ffb8b8}
+  .toast.good{border-color:rgba(120,255,170,.4);color:#b8ffd4}
+  .toast.info{border-color:rgba(120,180,255,.4);color:#b8d4ff}
+  .toast i{font-style:normal;font-size:12px}
+  @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes toastOut{to{opacity:0;transform:translateX(20px)}}
+
+  #expandPanel{
+    position:fixed;bottom:calc(6px + env(safe-area-inset-bottom));
+    left:calc(6px + env(safe-area-inset-left));
+    z-index:10;
+    background:rgba(10,16,26,.92);border:1px solid rgba(255,200,100,.3);
+    padding:7px 10px;border-radius:10px;font-size:9px;color:#dbe7f7;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    display:none;align-items:center;gap:6px;max-width:230px;
+  }
+  #expandPanel.show{display:flex}
+  #expandPanel b{color:#ffd166;display:block;margin-bottom:1px;font-size:10px}
+  #expandPanel span{color:#8fa2ba;font-size:8px;line-height:1.3}
+  #expandPanel button{
+    padding:4px 8px;border-radius:6px;font:inherit;font-size:9px;font-weight:700;
+    background:linear-gradient(180deg,#f5b942,#d99a2a);color:#1a1206;
+    border:none;cursor:pointer;white-space:nowrap;
+  }
+  #expandPanel button:disabled{opacity:.4}
+
+  #modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.75);
+    display:none;align-items:center;justify-content:center;z-index:100;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    padding:16px;
+  }
+  #modal.show{display:flex}
+  .dialog{
+    background:rgba(18,26,40,.98);border:1px solid rgba(120,170,255,.24);
+    border-radius:14px;padding:18px;min-width:260px;max-width:100%;
+  }
+  .dialog h2{font-size:14px;margin-bottom:10px;color:#dbe7f7;font-weight:600}
+  .dialog input{
+    width:100%;padding:9px 11px;font-size:14px;
+    background:rgba(0,0,0,.35);border:1px solid rgba(120,170,255,.24);
+    border-radius:9px;color:#fff;font:inherit;outline:none;
+  }
+  .dialog input:focus{border-color:rgba(90,170,255,.7)}
+  .dialog .btns{display:flex;gap:6px;margin-top:12px;justify-content:flex-end}
+  .dialog button{
+    padding:7px 14px;border-radius:8px;font:inherit;font-size:12px;font-weight:600;
+    cursor:pointer;border:1px solid transparent;
+  }
+  .dialog button.primary{
+    background:linear-gradient(180deg,#3d8dff,#2563eb);color:#fff;
+  }
+  .dialog button.sec{
+    background:rgba(255,255,255,.06);color:#93a6bd;
+    border-color:rgba(255,255,255,.1);
+  }
+
+  /* ---------- ROTATE LOCK (portrait) ---------- */
+  #rotateLock{
+    position:fixed;inset:0;background:#05080e;z-index:9999;
+    display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+    color:#dbe7f7;text-align:center;padding:20px;
+  }
+  #rotateLock.show{display:flex}
+  #rotateLock .phone{
+    width:56px;height:90px;border:3px solid #7cc4ff;border-radius:9px;
+    position:relative;animation:rotatePhone 2s ease-in-out infinite;
+  }
+  #rotateLock .phone::after{
+    content:'';position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
+    width:20px;height:3px;background:#7cc4ff;border-radius:2px;
+  }
+  @keyframes rotatePhone{
+    0%,40%{transform:rotate(0deg)}
+    60%,100%{transform:rotate(90deg)}
+  }
+  #rotateLock h2{font-size:16px;font-weight:600}
+  #rotateLock p{font-size:12px;color:#8fa2ba;max-width:280px}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="rotateLock">
+  <div class="phone"></div>
+  <h2>📱 Gire o dispositivo</h2>
+  <p>ISO CITY Flash Lite foi feito para jogar em modo paisagem</p>
+</div>
+
+<div id="hud">
+  <div class="stat" id="statMoney"><b id="money">$3600</b><span>Dinheiro</span></div>
+  <div class="stat"><b id="pop">0</b><span>Pop</span></div>
+  <div class="stat"><b id="inc">$0.0</b><span>Renda/s</span></div>
+  <div class="stat"><b id="clock">☀️ 06:00</b><span>Dia 1</span></div>
+</div>
+
+<div id="compass" title="Bússola">
+  <div id="compassN">N</div>
+  <div id="compassNeedle"></div>
+</div>
+
+<div id="actions">
+  <button class="abtn" id="btnSound" title="Som">🔊</button>
+  <button class="abtn" id="btnName" title="Renomear">✏️</button>
+  <button class="abtn" id="btnSave" title="Salvar">💾</button>
+  <button class="abtn" id="btnLoad" title="Carregar">📂</button>
+  <button class="abtn" id="btnFull" title="Tela cheia">⛶</button>
+</div>
+
+<nav id="toolbar">
+  <div class="tool-cat">Básico</div>
+  <button class="tool active" data-tool="house"><i>🏠</i><span>Casa</span><em>$145</em><span class="key">1</span></button>
+  <button class="tool" data-tool="tree"><i>🌳</i><span>Árvore</span><em>$30</em><span class="key">2</span></button>
+  <button class="tool" data-tool="park"><i>🌷</i><span>Parque</span><em>$110</em><span class="key">3</span></button>
+  <button class="tool" data-tool="road"><i>🛣️</i><span>Estrada</span><em>$18</em><span class="key">4</span></button>
+  <div class="tool-divider"></div>
+  <div class="tool-cat">Comércio</div>
+  <button class="tool" data-tool="store"><i>🏪</i><span>Loja</span><em>$360</em><span class="key">5</span></button>
+  <button class="tool" data-tool="mercearia"><i>🛒</i><span>Mercearia</span><em>$580</em><span class="key">6</span></button>
+  <button class="tool" data-tool="mercado"><i>🏬</i><span>Mercado</span><em>$980</em><span class="key">7</span></button>
+  <button class="tool" data-tool="shop"><i>🛍️</i><span>Shopping</span><em>$2100</em><span class="key">8</span></button>
+  <div class="tool-divider"></div>
+  <div class="tool-cat">Serviços</div>
+  <button class="tool" data-tool="clinic"><i>🏥</i><span>Hospital</span><em>$2600</em><span class="key">9</span></button>
+  <button class="tool" data-tool="school"><i>🏫</i><span>Escola</span><em>$1500</em></button>
+  <button class="tool" data-tool="police"><i>🚓</i><span>Delegacia</span><em>$1300</em></button>
+  <button class="tool" data-tool="tower"><i>🏢</i><span>Prédio</span><em>$1220</em></button>
+  <div class="tool-divider"></div>
+  <div class="tool-cat">Capital</div>
+  <button class="tool capital" data-tool="capital"><i>🏛️</i><span>Capital</span><em>$8500</em><span class="key">C</span></button>
+  <div class="tool-divider"></div>
+  <button class="tool" data-tool="grass"><i>🌱</i><span>Grama</span><em>$12</em></button>
+  <button class="tool" data-tool="sand"><i>🏖️</i><span>Areia</span><em>$12</em></button>
+  <button class="tool" data-tool="water"><i>💧</i><span>Água</span><em>$12</em></button>
+  <button class="tool" data-tool="bulldoze"><i>💥</i><span>Demolir</span><em>grátis</em></button>
+</nav>
+
+<div id="toasts"></div>
+
+<div id="zoomctl">
+  <button class="zbtn" id="zoomIn">＋</button>
+  <button class="zbtn" id="zoomOut">−</button>
+</div>
+<div id="rotctl">
+  <button class="rbtn" id="rotL">↺</button>
+  <button class="rbtn" id="rotR">↻</button>
+</div>
+
+<div id="expandPanel">
+  <div style="flex:1">
+    <b>🗺️ Território</b>
+    <span id="expandInfo">Auto-expansão em 10 tiles livres</span>
+  </div>
+  <button id="btnExpand">$<span id="expandCost">2500</span></button>
+</div>
+
+<div id="modal">
+  <div class="dialog">
+    <h2 id="modalTitle">Nome da cidade</h2>
+    <input type="text" id="modalInput" maxlength="24" placeholder="Ex: Nova Aurora">
+    <div class="btns">
+      <button class="sec" id="modalCancel">Cancelar</button>
+      <button class="primary" id="modalOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+     1. CANVAS & CONSTANTES
+     ========================================================= */
+  const canvas = document.getElementById('game');
+  const ctx    = canvas.getContext('2d', { alpha: false });
+
+  let W = 0, H = 0, DPR = 1;
+
+  const TILE_W = 64;
+  const TILE_H = 32;
+  const BASE_Z = -36;
+  const DAY_LENGTH = 90;
+
+  let MAP_W = 22;
+  let MAP_H = 22;
+  const MAP_MAX = 46;
+  const EXPANSION_STEP = 4;
+  const EXPANSION_BASE_COST = 2500;
+  // Auto-expansão: expande quando há poucos tiles livres nas bordas
+  const AUTO_EXPAND_FREE_TILES = 40;
+
+  const TERRAIN = {
+    grass: { h: 96,  s: 42, l: 48, z: 3  },
+    sand:  { h: 44,  s: 58, l: 70, z: 0  },
+    water: { h: 202, s: 62, l: 48, z: -5 },
+    road:  { h: 220, s: 9,  l: 28, z: 3  }
+  };
+  const DIRT = { h: 28, s: 30, l: 34 };
+
+  const STRUCTS = {
+    house:     { name:'Casa',      cost:145,  pop:4,   income:1.4,  icon:'🏠' },
+    tree:      { name:'Árvore',    cost:30,   pop:0,   income:0,    icon:'🌳' },
+    park:      { name:'Parque',    cost:110,  pop:0,   income:0.4,  icon:'🌷' },
+    store:     { name:'Loja',      cost:360,  pop:3,   income:7.0,  icon:'🏪' },
+    mercearia: { name:'Mercearia', cost:580,  pop:5,   income:11.0, icon:'🛒' },
+    mercado:   { name:'Mercado',   cost:980,  pop:9,   income:19.0, icon:'🏬' },
+    shop:      { name:'Shopping',  cost:2100, pop:22,  income:42.0, icon:'🛍️' },
+    clinic:    { name:'Hospital',  cost:2600, pop:14,  income:9.0,  icon:'🏥' },
+    school:    { name:'Escola',    cost:1500, pop:8,   income:5.0,  icon:'🏫' },
+    police:    { name:'Delegacia', cost:1300, pop:5,   income:4.0,  icon:'🚓' },
+    tower:     { name:'Prédio',    cost:1220, pop:26,  income:12.0, icon:'🏢' },
+    capital:   { name:'Capital',   cost:8500, pop:80,  income:85.0, icon:'🏛️' }
+  };
+
+  const TERRAIN_TOOLS = { grass:12, sand:12, water:12, road:18 };
+
+  /* =========================================================
+     2. UTILS
+     ========================================================= */
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const lerp  = (a, b, t) => a + (b - a) * t;
+  function hsl(h, s, l, a) {
+    l = clamp(l, 0, 100);
+    return a === undefined ? `hsl(${h},${s}%,${l}%)` : `hsla(${h},${s}%,${l}%,${a})`;
+  }
+  function hash(x, y) {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+
+  /* =========================================================
+     3. CÂMERA — SimCity style com math correta
+     ========================================================= */
+  const cam = {
+    tx: 0, ty: 0,          // target no mundo (x,y)
+    zoom: 1, tzoom: 1,
+    yaw: 0,                // rad
+    cx: 0, cy: 0, cz: 1    // valores suavizados
+  };
+
+  function project(x, y, z, yaw) {
+    const mx = x - MAP_W / 2;
+    const my = y - MAP_H / 2;
+    const c = Math.cos(yaw), s = Math.sin(yaw);
+    const rx = mx * c - my * s;
+    const ry = mx * s + my * c;
+    return {
+      x: (rx - ry) * (TILE_W * 0.5),
+      y: (rx + ry) * (TILE_H * 0.5) - z
+    };
+  }
+
+  function unproject(sx, sy, yaw) {
+    const ix = sx / (TILE_W * 0.5);
+    const iy = sy / (TILE_H * 0.5);
+    const rx = (ix + iy) * 0.5;
+    const ry = (iy - ix) * 0.5;
+    const c = Math.cos(-yaw), s = Math.sin(-yaw);
+    const mx = rx * c - ry * s;
+    const my = rx * s + ry * c;
+    return { x: mx + MAP_W / 2, y: my + MAP_H / 2 };
+  }
+
+  function worldToScreen(wx, wy, wz) {
+    const p = project(wx, wy, wz, cam.yaw);
+    return {
+      x: p.x * cam.cz + cam.cx + W / 2,
+      y: p.y * cam.cz + cam.cy + H / 2
+    };
+  }
+
+  function screenToTile(sx, sy) {
+    const dx = (sx - W / 2 - cam.cx) / cam.cz;
+    const dy = (sy - H / 2 - cam.cy) / cam.cz;
+    const w = unproject(dx, dy, cam.yaw);
+    return { x: Math.floor(w.x), y: Math.floor(w.y) };
+  }
+
+  function fillPoly(pts, color) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  /* =========================================================
+     4. ILUMINAÇÃO DIRECIONAL (facing camera)
+     ---------------------------------------------------------
+     Face lateral: normal aponta em X+ (dx>0), Y+ (dy>0),
+     ou negativo. O quanto a face "olha pra câmera" depende do
+     yaw atual. Shading é calculado por face individualmente.
+     ========================================================= */
+  function faceBrightness(worldDir, yaw) {
+    // worldDir: vetor normal no mundo (unidade)
+    // camera "olha" na direção (-cos(yaw), -sin(yaw))... 
+    // simplificamos com uma luz fixa rotacionada junto com a câmera
+    const lx = Math.cos(yaw + Math.PI / 4);
+    const ly = Math.sin(yaw + Math.PI / 4);
+    const dot = worldDir.x * lx + worldDir.y * ly;
+    return clamp(dot, -1, 1);
+  }
+
+  /* =========================================================
+     5. RENDER — BLOCO 3D COMPLETO (6 faces com culling)
+     ---------------------------------------------------------
+     Isso resolve o bug das casas: TODAS as faces visíveis
+     são desenhadas com shading correto, independente do yaw.
+     ========================================================= */
+  function drawBlockFull(x0, y0, x1, y1, z0, z1, h, s, l) {
+    // 4 cantos em cada nível
+    const pA0 = worldToScreen(x0, y0, z0);
+    const pB0 = worldToScreen(x1, y0, z0);
+    const pC0 = worldToScreen(x1, y1, z0);
+    const pD0 = worldToScreen(x0, y1, z0);
+    const pA1 = worldToScreen(x0, y0, z1);
+    const pB1 = worldToScreen(x1, y0, z1);
+    const pC1 = worldToScreen(x1, y1, z1);
+    const pD1 = worldToScreen(x0, y1, z1);
+
+    // Direção de visão da câmera (no mundo, invertido — o que aponta pra fora da tela)
+    const viewDir = { x: -Math.cos(cam.yaw), y: -Math.sin(cam.yaw) };
+    // viewDir agora aponta do objeto para a câmera
+    // (pois câmera está atrás na direção oposta ao viewDir)
+
+    // Face -X (oeste): normal (-1, 0)
+    const n_xneg = { x: -1, y: 0 };
+    if (n_xneg.x * viewDir.x + n_xneg.y * viewDir.y > 0) {
+      const dot = faceBrightness({ x: 0, y: -1 }, cam.yaw); // usa iluminação direcional
+      const shade = 0.55 + 0.2 * dot;
+      fillPoly([pA1, pA0, pD0, pD1], hsl(h, s, l * shade));
+    }
+    // Face +X (leste): normal (1, 0)
+    const n_xpos = { x: 1, y: 0 };
+    if (n_xpos.x * viewDir.x + n_xpos.y * viewDir.y > 0) {
+      const dot = faceBrightness({ x: 1, y: 0 }, cam.yaw);
+      const shade = 0.85 + 0.2 * dot;
+      fillPoly([pB1, pC1, pC0, pB0], hsl(h, s, l * shade));
+    }
+    // Face -Y (sul): normal (0, -1)
+    const n_yneg = { x: 0, y: -1 };
+    if (n_yneg.x * viewDir.x + n_yneg.y * viewDir.y > 0) {
+      const dot = faceBrightness({ x: 0, y: -1 }, cam.yaw);
+      const shade = 0.70 + 0.2 * dot;
+      fillPoly([pA1, pB1, pB0, pA0], hsl(h, s, l * shade));
+    }
+    // Face +Y (norte): normal (0, 1)
+    const n_ypos = { x: 0, y: 1 };
+    if (n_ypos.x * viewDir.x + n_ypos.y * viewDir.y > 0) {
+      const dot = faceBrightness({ x: 0, y: 1 }, cam.yaw);
+      const shade = 0.90 + 0.2 * dot;
+      fillPoly([pD1, pC1, pC0, pD0], hsl(h, s, l * shade));
+    }
+    // Topo (sempre visível — assume que a câmera está acima)
+    const topDot = faceBrightness({ x: 0.7, y: 0.7 }, cam.yaw);
+    const topShade = 1.05 + 0.08 * topDot;
+    fillPoly([pA1, pB1, pC1, pD1], hsl(h, s, l * topShade));
+  }
+
+  /* =========================================================
+     6. PIRÂMIDE COMPLETA (4 faces com culling)
+     ---------------------------------------------------------
+     Isso resolve o bug dos telhados: TODAS as 4 faces são
+     desenhadas ou ocultadas corretamente conforme o yaw.
+     ========================================================= */
+  function drawPyramidFull(cx, cy, zBase, halfX, halfY, zApex, h, s, l, overhang) {
+    const ov = overhang || 0;
+    const x0 = cx - halfX - ov, x1 = cx + halfX + ov;
+    const y0 = cy - halfY - ov, y1 = cy + halfY + ov;
+
+    const apex = worldToScreen(cx, cy, zApex);
+    const p0 = worldToScreen(x0, y0, zBase); // oeste-sul
+    const p1 = worldToScreen(x1, y0, zBase); // leste-sul
+    const p2 = worldToScreen(x1, y1, zBase); // leste-norte
+    const p3 = worldToScreen(x0, y1, zBase); // oeste-norte
+
+    // 4 faces: S (p0-p1-apex), E (p1-p2-apex), N (p2-p3-apex), W (p3-p0-apex)
+    // Normais aproximadas (no plano XY)
+    const faces = [
+      { pts: [p0, p1, apex], n: { x: 0, y: -1 }, sh: 0.72 }, // south
+      { pts: [p1, p2, apex], n: { x: 1, y: 0 },  sh: 0.90 }, // east
+      { pts: [p2, p3, apex], n: { x: 0, y: 1 },  sh: 0.85 }, // north
+      { pts: [p3, p0, apex], n: { x: -1, y: 0 }, sh: 0.60 }  // west
+    ];
+
+    // viewDir aponta do objeto para a câmera
+    const viewDir = { x: -Math.cos(cam.yaw), y: -Math.sin(cam.yaw) };
+
+    for (const f of faces) {
+      const dot = f.n.x * viewDir.x + f.n.y * viewDir.y;
+      if (dot > 0.001) {
+        // iluminação direcional interna
+        const bright = 0.7 + 0.3 * faceBrightness(f.n, cam.yaw);
+        fillPoly(f.pts, hsl(h, s, l * f.sh * bright * 1.4));
+      }
+    }
+  }
+
+  /* =========================================================
+     7. SHAPE WALL (face plana em uma das 4 direções)
+     ---------------------------------------------------------
+     Desenha um "papel de parede" fixado a uma face do bloco,
+     com culling — some quando a face não está visível.
+     dirX, dirY: normal da face (ex: {1,0} = leste)
+     ========================================================= */
+  function drawWallDecal(x0, y0, x1, y1, z0, z1, dirX, dirY, color) {
+    // culling
+    const viewDir = { x: -Math.cos(cam.yaw), y: -Math.sin(cam.yaw) };
+    const dot = dirX * viewDir.x + dirY * viewDir.y;
+    if (dot <= 0.001) return;
+
+    const pts = [
+      worldToScreen(x0, y0, z1),
+      worldToScreen(x1, y0, z1),
+      worldToScreen(x1, y1, z1),
+      worldToScreen(x0, y1, z1)
+    ];
+    // A "face" tem os 4 cantos da base (z0 é apenas a altura base, z1 o topo da parede)
+    // Para a face +X (leste): x0=x1, e os cantos são (x0,y0), (x0,y1) com heights variando
+    // Vou receber 4 pontos prontos para simplificar — a assinatura é diferente.
+  }
+
+  // Versão 2: passa os 4 cantos em world coords direto (mais flexível)
+  function drawWallQuad(pts3d, dirX, dirY, color) {
+    const viewDir = { x: -Math.cos(cam.yaw), y: -Math.sin(cam.yaw) };
+    if (dirX * viewDir.x + dirY * viewDir.y <= 0.001) return;
+    const spts = pts3d.map(p => worldToScreen(p[0], p[1], p[2]));
+    fillPoly(spts, color);
+  }
+
+  /* =========================================================
+     8. CACHE DE TILE — evita recomputar projeções estáticas
+     ========================================================= */
+  // Cada tile guarda as projeções dos 4 cantos em world space
+  // (sem câmera) — pré-computadas para acelerar o render.
+  function precomputeTileGeom() {
+    // (não usado atualmente por simplicidade, mas a estrutura está aqui para
+    // futura otimização — o custo atual está OK para mapas de até 46x46)
+  }
+
+  /* =========================================================
+     9. ESTADO DO JOGO
+     ========================================================= */
+  let tiles = [];
+  const state = {
+    money: 3600,
+    pop: 0,
+    income: 0,
+    tool: 'house',
+    time: 0,
+    day: 1,
+    dayTime: 0.25,
+    cityName: 'Nova Aurora',
+    capitalPlaced: false,
+    capitalPos: null,
+    autoExpand: true
+  };
+
+  let growTimer = 0;
+  let hover = { x: -1, y: -1 };
+  let particles = [];
+  let cars = [];
+  let npcs = [];
+  let clouds = [];
+  let freeTiles = 0; // contador de tiles vazios para auto-expansão
+
+  /* =========================================================
+     10. ÁUDIO
+     ========================================================= */
+  let audioCtx = null;
+  let soundOn = true;
+  function ensureAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { audioCtx = null; }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function playTone(freq, dur, type, vol, slideTo) {
+    if (!soundOn) return;
+    const ac = ensureAudio();
+    if (!ac) return;
+    try {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, ac.currentTime + dur);
+      g.gain.value = 0;
+      g.gain.linearRampToValueAtTime(vol || 0.08, ac.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+      o.connect(g).connect(ac.destination);
+      o.start();
+      o.stop(ac.currentTime + dur + 0.02);
+    } catch (e) {}
+  }
+  const SFX = {
+    place:    () => playTone(440, 0.08, 'triangle', 0.06, 660),
+    place2:   () => playTone(330, 0.12, 'sine',     0.05, 500),
+    error:    () => playTone(140, 0.18, 'sawtooth', 0.05, 90),
+    bulldoze: () => playTone(200, 0.15, 'square',  0.04, 60),
+    upgrade:  () => { playTone(660, 0.15, 'triangle', 0.05, 990); playTone(880, 0.2, 'sine', 0.04, 1320); },
+    coin:     () => playTone(1200, 0.06, 'sine', 0.03, 1600),
+    capital:  () => { playTone(523, 0.4, 'triangle', 0.07); playTone(659, 0.5, 'triangle', 0.06, 784); },
+    expand:   () => { playTone(330, 0.2, 'sine', 0.05, 550); playTone(440, 0.3, 'triangle', 0.05, 660); }
+  };
+
+  /* =========================================================
+     11. MAPA
+     ========================================================= */
+  function genMap() {
+    tiles = [];
+    for (let x = 0; x < MAP_W; x++) {
+      tiles[x] = [];
+      for (let y = 0; y < MAP_H; y++) {
+        tiles[x][y] = { type: 'grass', building: null, anim: 0 };
+      }
+    }
+    // Área inicial plana
+    const cx = MAP_W / 2, cy = MAP_H / 2;
+    for (let x = 0; x < MAP_W; x++) {
+      for (let y = 0; y < MAP_H; y++) {
+        if (Math.hypot(x - cx, y - cy) < 5) tiles[x][y].type = 'grass';
+        else {
+          const n = Math.sin(x * 0.31 + 1.7) * Math.cos(y * 0.27) +
+                    Math.sin((x + y) * 0.19) * 0.75 + (hash(x, y) - 0.5) * 0.5;
+          if (n < -0.72) tiles[x][y].type = 'water';
+          else if (n < -0.50) tiles[x][y].type = 'sand';
+        }
+      }
+    }
+    genClouds();
+    cars = []; npcs = [];
+    countFreeTiles();
+  }
+
+  function countFreeTiles() {
+    let c = 0;
+    // Conta apenas as bordas (1 tile de margem)
+    for (let x = 0; x < MAP_W; x++) {
+      for (let y = 0; y < MAP_H; y++) {
+        const isBorder = x === 0 || y === 0 || x === MAP_W - 1 || y === MAP_H - 1;
+        if (isBorder && !tiles[x][y].building && tiles[x][y].type === 'grass') c++;
+      }
+    }
+    freeTiles = c;
+  }
+
+  function genClouds() {
+    clouds = [];
+    for (let i = 0; i < 12; i++) {
+      clouds.push({
+        x: Math.random() * MAP_W * 2 - MAP_W * 0.5,
+        y: Math.random() * MAP_H * 2 - MAP_H * 0.5,
+        z: 90 + Math.random() * 40,
+        s: 0.6 + Math.random() * 0.9,
+        speed: 0.15 + Math.random() * 0.2,
+        puffs: 3 + Math.floor(Math.random() * 3)
+      });
+    }
+  }
+
+  /* =========================================================
+     12. CÂMERA CONTROLS
+     ========================================================= */
+  function centerCamera() {
+    cam.tx = MAP_W / 2;
+    cam.ty = MAP_H / 2;
+  }
+  function fitCamera() {
+    const span = MAP_W + MAP_H;
+    const mapW = span * TILE_W * 0.5;
+    const mapH = span * TILE_H * 0.5;
+    const z = Math.min(W / (mapW + 160), H / (mapH + 180));
+    cam.tzoom = clamp(z, 0.28, 1.6);
+    centerCamera();
+  }
+
+  /* =========================================================
+     13. DESENHO — ESTRUTURAS (todas reformuladas com drawBlockFull)
+     ========================================================= */
+
+  function drawHouse(x, y, b, z) {
+    const m  = 0.16;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 12 + (b.level - 1) * 5 + b.anim * 2;
+
+    // Corpo (4 faces + topo com culling)
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 38, 32, 78);
+
+    // Telhado: PIRÂMIDE COMPLETA (4 faces)
+    drawPyramidFull((x0 + x1) / 2, (y0 + y1) / 2, z + h,
+                    (x1 - x0) / 2, (y1 - y0) / 2,
+                    z + h + 9 + b.level * 2,
+                    8, 62, 52, 0.07);
+
+    // Janelas em todas as 4 faces
+    const wz = z + h * 0.45;
+    const wW = 0.20, wH = 5;
+    // Face +X (leste)
+    drawWallQuad([
+      [x1, y0 + 0.35, wz], [x1, y0 + 0.35 + wW, wz],
+      [x1, y0 + 0.35 + wW, wz + wH], [x1, y0 + 0.35, wz + wH]
+    ], 1, 0, hsl(200, 60, 62));
+    // Face -X (oeste)
+    drawWallQuad([
+      [x0, y1 - 0.35, wz], [x0, y1 - 0.35 - wW, wz],
+      [x0, y1 - 0.35 - wW, wz + wH], [x0, y1 - 0.35, wz + wH]
+    ], -1, 0, hsl(200, 55, 48));
+    // Face +Y (norte)
+    drawWallQuad([
+      [x1 - 0.55, y1, wz], [x1 - 0.55 + wW, y1, wz],
+      [x1 - 0.55 + wW, y1, wz + wH], [x1 - 0.55, y1, wz + wH]
+    ], 0, 1, hsl(200, 60, 55));
+    // Face -Y (sul)
+    drawWallQuad([
+      [x0 + 0.35, y0, wz], [x0 + 0.35 + wW, y0, wz],
+      [x0 + 0.35 + wW, y0, wz + wH], [x0 + 0.35, y0, wz + wH]
+    ], 0, -1, hsl(200, 60, 50));
+
+    // Porta na face +X (fica visível em ângulos frontais)
+    drawWallQuad([
+      [x1, y0 + 0.40, z], [x1, y0 + 0.55, z],
+      [x1, y0 + 0.55, z + 6], [x1, y0 + 0.40, z + 6]
+    ], 1, 0, hsl(28, 55, 32));
+  }
+
+  function drawStore(x, y, b, z) {
+    const m  = 0.11;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 14 + (b.level - 1) * 6 + b.anim * 2;
+
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 205, 22, 74);
+
+    // Toldo (faixa colorida nas 4 faces superiores)
+    const zb = z + h - 6, zt = z + h - 2.5;
+    // +X face
+    drawWallQuad([
+      [x1, y0, zb], [x1, y1, zb], [x1, y1, zt], [x1, y0, zt]
+    ], 1, 0, hsl(352, 72, 60));
+    // -X face
+    drawWallQuad([
+      [x0, y0, zb], [x0, y1, zb], [x0, y1, zt], [x0, y0, zt]
+    ], -1, 0, hsl(352, 72, 42));
+    // +Y face
+    drawWallQuad([
+      [x1, y1, zb], [x0, y1, zb], [x0, y1, zt], [x1, y1, zt]
+    ], 0, 1, hsl(352, 72, 50));
+    // -Y face
+    drawWallQuad([
+      [x1, y0, zb], [x0, y0, zb], [x0, y0, zt], [x1, y0, zt]
+    ], 0, -1, hsl(352, 72, 44));
+
+    // Laje de cobertura
+    const o = 0.06;
+    drawBlockFull(x0 - o, y0 - o, x1 + o, y1 + o, z + h, z + h + 3, 210, 14, 42);
+  }
+
+  function drawMercearia(x, y, b, z) {
+    const m  = 0.09;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 17 + (b.level - 1) * 7 + b.anim * 2;
+
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 155, 45, 62);
+
+    const zb = z + h - 7, zt = z + h - 3;
+    // Toldo verde 4 faces
+    drawWallQuad([[x1, y0, zb], [x1, y1, zb], [x1, y1, zt], [x1, y0, zt]], 1, 0, hsl(120, 55, 48));
+    drawWallQuad([[x0, y0, zb], [x0, y1, zb], [x0, y1, zt], [x0, y0, zt]], -1, 0, hsl(120, 55, 34));
+    drawWallQuad([[x1, y1, zb], [x0, y1, zb], [x0, y1, zt], [x1, y1, zt]], 0, 1, hsl(120, 55, 42));
+    drawWallQuad([[x1, y0, zb], [x0, y0, zb], [x0, y0, zt], [x1, y0, zt]], 0, -1, hsl(120, 55, 38));
+
+    const o = 0.05;
+    drawBlockFull(x0 - o, y0 - o, x1 + o, y1 + o, z + h, z + h + 3, 45, 90, 62);
+
+    const pc = worldToScreen(x + 0.5, y + 0.5, z + h + 6);
+    ctx.fillStyle = hsl(48, 90, 60);
+    ctx.beginPath();
+    ctx.arc(pc.x, pc.y, 3.5 * cam.cz, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawMercado(x, y, b, z) {
+    const m  = 0.08;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 21 + (b.level - 1) * 8 + b.anim * 3;
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 20, 20, 78);
+
+    // Bandas coloridas nas 4 faces
+    const bands = [
+      { h: 0.05, col: [350, 75, 58] },
+      { h: 0.32, col: [48, 85, 58] },
+      { h: 0.62, col: [200, 60, 55] }
+    ];
+    for (const band of bands) {
+      const zb = z + h * band.h;
+      const zt = z + h * (band.h + 0.15);
+      drawWallQuad([[x1, y0, zb], [x1, y1, zb], [x1, y1, zt], [x1, y0, zt]], 1, 0, hsl(...band.col));
+      drawWallQuad([[x0, y0, zb], [x0, y1, zb], [x0, y1, zt], [x0, y0, zt]], -1, 0,
+        hsl(band.col[0], band.col[1], band.col[2] * 0.7));
+      drawWallQuad([[x1, y1, zb], [x0, y1, zb], [x0, y1, zt], [x1, y1, zt]], 0, 1,
+        hsl(band.col[0], band.col[1], band.col[2] * 0.95));
+      drawWallQuad([[x1, y0, zb], [x0, y0, zb], [x0, y0, zt], [x1, y0, zt]], 0, -1,
+        hsl(band.col[0], band.col[1], band.col[2] * 0.85));
+    }
+
+    const o = 0.06;
+    drawBlockFull(x0 - o, y0 - o, x1 + o, y1 + o, z + h, z + h + 3.5, 0, 0, 30);
+    drawBlockFull(x + 0.30, y + 0.30, x + 0.34, y + 0.34, z + h + 3.5, z + h + 9, 0, 0, 60);
+    drawBlockFull(x + 0.66, y + 0.66, x + 0.70, y + 0.70, z + h + 3.5, z + h + 7, 0, 0, 60);
+  }
+
+  function drawShopping(x, y, b, z) {
+    const m  = 0.06;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 26 + (b.level - 1) * 10 + b.anim * 3;
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 260, 12, 82);
+
+    // Vidros nas 4 faces
+    const wR = hsl(200, 60, 68), wL = hsl(200, 60, 44);
+    for (let i = 0; i < 3; i++) {
+      const u0 = 0.15 + i * 0.28;
+      const u1 = u0 + 0.20;
+      drawWallQuad([
+        [x1, y0 + (y1 - y0) * u0, z + 4], [x1, y0 + (y1 - y0) * u1, z + 4],
+        [x1, y0 + (y1 - y0) * u1, z + h - 4], [x1, y0 + (y1 - y0) * u0, z + h - 4]
+      ], 1, 0, wR);
+      drawWallQuad([
+        [x0, y0 + (y1 - y0) * u0, z + 4], [x0, y0 + (y1 - y0) * u1, z + 4],
+        [x0, y0 + (y1 - y0) * u1, z + h - 4], [x0, y0 + (y1 - y0) * u0, z + h - 4]
+      ], -1, 0, wL);
+    }
+    // Vidros nas faces Y
+    for (let i = 0; i < 3; i++) {
+      const u0 = 0.15 + i * 0.28;
+      const u1 = u0 + 0.20;
+      drawWallQuad([
+        [x1 + (x0 - x1) * u0, y1, z + 4], [x1 + (x0 - x1) * u1, y1, z + 4],
+        [x1 + (x0 - x1) * u1, y1, z + h - 4], [x1 + (x0 - x1) * u0, y1, z + h - 4]
+      ], 0, 1, wR);
+      drawWallQuad([
+        [x1 + (x0 - x1) * u0, y0, z + 4], [x1 + (x0 - x1) * u1, y0, z + 4],
+        [x1 + (x0 - x1) * u1, y0, z + h - 4], [x1 + (x0 - x1) * u0, y0, z + h - 4]
+      ], 0, -1, wL);
+    }
+
+    const o = 0.05;
+    drawBlockFull(x0 - o, y0 - o, x1 + o, y1 + o, z + h, z + h + 3, 280, 60, 62);
+
+    if (isNight()) {
+      const top = worldToScreen(x + 0.5, y + 0.5, z + h + 3.5);
+      const grd = ctx.createRadialGradient(top.x, top.y, 0, top.x, top.y, 22 * cam.cz);
+      grd.addColorStop(0, 'rgba(180,120,255,0.55)');
+      grd.addColorStop(1, 'rgba(180,120,255,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(top.x, top.y, 22 * cam.cz, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawClinic(x, y, b, z) {
+    const m  = 0.10;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 20 + (b.level - 1) * 8 + b.anim * 2;
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 0, 0, 92);
+
+    const zmid = z + h * 0.55;
+    // Cruz vermelha nas 4 faces
+    // +X
+    drawWallQuad([[x1, y0 + 0.40, z + 6], [x1, y0 + 0.60, z + 6],
+                  [x1, y0 + 0.60, z + h - 6], [x1, y0 + 0.40, z + h - 6]], 1, 0, hsl(0, 75, 55));
+    drawWallQuad([[x1, y0 + 0.25, zmid - 3], [x1, y0 + 0.75, zmid - 3],
+                  [x1, y0 + 0.75, zmid + 3], [x1, y0 + 0.25, zmid + 3]], 1, 0, hsl(0, 75, 55));
+    // -X
+    drawWallQuad([[x0, y0 + 0.40, z + 6], [x0, y0 + 0.60, z + 6],
+                  [x0, y0 + 0.60, z + h - 6], [x0, y0 + 0.40, z + h - 6]], -1, 0, hsl(0, 75, 38));
+    // +Y
+    drawWallQuad([[x1 + (x0 - x1) * 0.40, y1, z + 6], [x1 + (x0 - x1) * 0.60, y1, z + 6],
+                  [x1 + (x0 - x1) * 0.60, y1, z + h - 6], [x1 + (x0 - x1) * 0.40, y1, z + h - 6]],
+      0, 1, hsl(0, 75, 50));
+    drawWallQuad([[x1 + (x0 - x1) * 0.25, y1, zmid - 3], [x1 + (x0 - x1) * 0.75, y1, zmid - 3],
+                  [x1 + (x0 - x1) * 0.75, y1, zmid + 3], [x1 + (x0 - x1) * 0.25, y1, zmid + 3]],
+      0, 1, hsl(0, 75, 50));
+    // -Y
+    drawWallQuad([[x1 + (x0 - x1) * 0.40, y0, z + 6], [x1 + (x0 - x1) * 0.60, y0, z + 6],
+                  [x1 + (x0 - x1) * 0.60, y0, z + h - 6], [x1 + (x0 - x1) * 0.40, y0, z + h - 6]],
+      0, -1, hsl(0, 75, 40));
+
+    const o = 0.05;
+    drawBlockFull(x0 - o, y0 - o, x1 + o, y1 + o, z + h, z + h + 2.5, 0, 0, 65);
+
+    if (isNight()) {
+      const top = worldToScreen(x + 0.5, y + 0.5, z + h + 3);
+      const grd = ctx.createRadialGradient(top.x, top.y, 0, top.x, top.y, 18 * cam.cz);
+      grd.addColorStop(0, 'rgba(255,80,80,0.4)');
+      grd.addColorStop(1, 'rgba(255,80,80,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(top.x, top.y, 18 * cam.cz, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawSchool(x, y, b, z) {
+    const m  = 0.10;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 15 + (b.level - 1) * 6 + b.anim * 2;
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 42, 52, 72);
+
+    // Telhado piramidal completo
+    drawPyramidFull((x0 + x1) / 2, (y0 + y1) / 2, z + h,
+                    (x1 - x0) / 2, (y1 - y0) / 2,
+                    z + h + 6,
+                    22, 55, 42, 0.06);
+
+    // Janelas nas 4 faces
+    const wR = isNight() ? hsl(48, 90, 82) : hsl(200, 55, 68);
+    const wL = isNight() ? hsl(48, 82, 54) : hsl(200, 55, 44);
+    for (let yy = z + 4; yy < z + h - 3; yy += 5) {
+      for (const u of [0.15, 0.45, 0.75]) {
+        drawWallQuad([
+          [x1, y0 + (y1 - y0) * u, yy], [x1, y0 + (y1 - y0) * (u + 0.15), yy],
+          [x1, y0 + (y1 - y0) * (u + 0.15), yy + 3], [x1, y0 + (y1 - y0) * u, yy + 3]
+        ], 1, 0, wR);
+        drawWallQuad([
+          [x0, y0 + (y1 - y0) * u, yy], [x0, y0 + (y1 - y0) * (u + 0.15), yy],
+          [x0, y0 + (y1 - y0) * (u + 0.15), yy + 3], [x0, y0 + (y1 - y0) * u, yy + 3]
+        ], -1, 0, wL);
+        drawWallQuad([
+          [x1 + (x0 - x1) * u, y1, yy], [x1 + (x0 - x1) * (u + 0.15), y1, yy],
+          [x1 + (x0 - x1) * (u + 0.15), y1, yy + 3], [x1 + (x0 - x1) * u, y1, yy + 3]
+        ], 0, 1, wR);
+        drawWallQuad([
+          [x1 + (x0 - x1) * u, y0, yy], [x1 + (x0 - x1) * (u + 0.15), y0, yy],
+          [x1 + (x0 - x1) * (u + 0.15), y0, yy + 3], [x1 + (x0 - x1) * u, y0, yy + 3]
+        ], 0, -1, wL);
+      }
+    }
+  }
+
+  function drawPolice(x, y, b, z) {
+    const m  = 0.10;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 16 + (b.level - 1) * 6 + b.anim * 2;
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 220, 60, 42);
+
+    const zb = z + h * 0.42, zt = z + h * 0.58;
+    // Faixa azul nas 4 faces
+    drawWallQuad([[x1, y0, zb], [x1, y1, zb], [x1, y1, zt], [x1, y0, zt]], 1, 0, hsl(210, 75, 60));
+    drawWallQuad([[x0, y0, zb], [x0, y1, zb], [x0, y1, zt], [x0, y0, zt]], -1, 0, hsl(210, 75, 42));
+    drawWallQuad([[x1, y1, zb], [x0, y1, zb], [x0, y1, zt], [x1, y1, zt]], 0, 1, hsl(210, 75, 52));
+    drawWallQuad([[x1, y0, zb], [x0, y0, zb], [x0, y0, zt], [x1, y0, zt]], 0, -1, hsl(210, 75, 46));
+
+    const o = 0.05;
+    drawBlockFull(x0 - o, y0 - o, x1 + o, y1 + o, z + h, z + h + 2.5, 220, 40, 30);
+
+    const blink = Math.sin(state.time * 6) > 0;
+    const color = blink ? hsl(0, 90, 65) : hsl(210, 90, 65);
+    const top = worldToScreen(x + 0.5, y + 0.5, z + h + 5);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(top.x, top.y, 3 * cam.cz, 0, Math.PI * 2);
+    ctx.fill();
+    const grd = ctx.createRadialGradient(top.x, top.y, 0, top.x, top.y, 14 * cam.cz);
+    grd.addColorStop(0, blink ? 'rgba(255,50,50,0.5)' : 'rgba(50,120,255,0.5)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(top.x, top.y, 14 * cam.cz, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawTower(x, y, b, z) {
+    const m  = 0.2;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 34 + (b.level - 1) * 22 + b.anim * 3;
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 210, 14, 80);
+
+    const night = isNight();
+    const wR = night ? hsl(48, 90, 82) : hsl(48, 90, 72);
+    const wL = night ? hsl(48, 82, 54) : hsl(48, 82, 44);
+
+    for (let zz = z + 8; zz < z + h - 7; zz += 9) {
+      for (const u of [0.16, 0.54]) {
+        const u2 = u + 0.28;
+        // Face +X
+        drawWallQuad([
+          [x1, y0 + (y1 - y0) * u, zz], [x1, y0 + (y1 - y0) * u2, zz],
+          [x1, y0 + (y1 - y0) * u2, zz + 4], [x1, y0 + (y1 - y0) * u, zz + 4]
+        ], 1, 0, wR);
+        // Face -X
+        drawWallQuad([
+          [x0, y0 + (y1 - y0) * u, zz], [x0, y0 + (y1 - y0) * u2, zz],
+          [x0, y0 + (y1 - y0) * u2, zz + 4], [x0, y0 + (y1 - y0) * u, zz + 4]
+        ], -1, 0, wL);
+        // Face +Y
+        drawWallQuad([
+          [x1 + (x0 - x1) * u, y1, zz], [x1 + (x0 - x1) * u2, y1, zz],
+          [x1 + (x0 - x1) * u2, y1, zz + 4], [x1 + (x0 - x1) * u, y1, zz + 4]
+        ], 0, 1, wR);
+        // Face -Y
+        drawWallQuad([
+          [x1 + (x0 - x1) * u, y0, zz], [x1 + (x0 - x1) * u2, y0, zz],
+          [x1 + (x0 - x1) * u2, y0, zz + 4], [x1 + (x0 - x1) * u, y0, zz + 4]
+        ], 0, -1, wL);
+      }
+    }
+
+    const o = 0.05;
+    drawBlockFull(x0 - o, y0 - o, x1 + o, y1 + o, z + h, z + h + 2.5, 215, 18, 55);
+    drawBlockFull(x + 0.47, y + 0.47, x + 0.53, y + 0.53, z + h + 2.5, z + h + 11, 0, 0, 70);
+
+    if (night) {
+      const top = worldToScreen(x + 0.5, y + 0.5, z + h + 11.5);
+      const grd = ctx.createRadialGradient(top.x, top.y, 0, top.x, top.y, 12 * cam.cz);
+      grd.addColorStop(0, 'rgba(255,90,90,0.9)');
+      grd.addColorStop(1, 'rgba(255,90,90,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(top.x, top.y, 12 * cam.cz, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawCapital(x, y, b, z) {
+    const m  = 0.05;
+    const x0 = x + m, y0 = y + m, x1 = x + 1 - m, y1 = y + 1 - m;
+    const h  = 30 + (b.level - 1) * 4 + b.anim * 4;
+    drawBlockFull(x0, y0, x1, y1, z, z + h, 45, 30, 88);
+
+    // Colunas nas 4 faces (visíveis dependendo do yaw)
+    for (let i = 0; i < 4; i++) {
+      const u = 0.15 + i * 0.20;
+      drawWallQuad([
+        [x1, y0 + (y1 - y0) * u, z + 3], [x1, y0 + (y1 - y0) * (u + 0.08), z + 3],
+        [x1, y0 + (y1 - y0) * (u + 0.08), z + h - 3], [x1, y0 + (y1 - y0) * u, z + h - 3]
+      ], 1, 0, hsl(45, 20, 74));
+      drawWallQuad([
+        [x0, y0 + (y1 - y0) * u, z + 3], [x0, y0 + (y1 - y0) * (u + 0.08), z + 3],
+        [x0, y0 + (y1 - y0) * (u + 0.08), z + h - 3], [x0, y0 + (y1 - y0) * u, z + h - 3]
+      ], -1, 0, hsl(45, 20, 58));
+      drawWallQuad([
+        [x1 + (x0 - x1) * u, y1, z + 3], [x1 + (x0 - x1) * (u + 0.08), y1, z + 3],
+        [x1 + (x0 - x1) * (u + 0.08), y1, z + h - 3], [x1 + (x0 - x1) * u, y1, z + h - 3]
+      ], 0, 1, hsl(45, 20, 68));
+    }
+
+    // Telhado piramidal (frontão)
+    drawPyramidFull((x0 + x1) / 2, (y0 + y1) / 2, z + h,
+                    (x1 - x0) / 2, (y1 - y0) / 2,
+                    z + h + 10,
+                    45, 20, 75, 0.04);
+
+    // Cúpula dourada
+    const domeBase = worldToScreen(x + 0.5, y + 0.5, z + h + 10);
+    const domeMid  = worldToScreen(x + 0.5, y + 0.5, z + h + 14);
+    const domeTop  = worldToScreen(x + 0.5, y + 0.5, z + h + 18);
+    const r = 8 * cam.cz;
+    ctx.fillStyle = hsl(48, 85, 58);
+    ctx.beginPath();
+    ctx.moveTo(domeBase.x - r, domeBase.y);
+    ctx.quadraticCurveTo(domeMid.x - r * 1.2, domeMid.y, domeTop.x, domeTop.y);
+    ctx.quadraticCurveTo(domeMid.x + r * 1.2, domeMid.y, domeBase.x + r, domeBase.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = hsl(48, 85, 72);
+    ctx.beginPath();
+    ctx.moveTo(domeBase.x - r / 2, domeBase.y);
+    ctx.quadraticCurveTo(domeMid.x - r / 2, domeMid.y, domeTop.x, domeTop.y);
+    ctx.lineTo(domeBase.x, domeBase.y);
+    ctx.closePath();
+    ctx.fill();
+
+    drawBlockFull(x + 0.49, y + 0.49, x + 0.51, y + 0.51, z + h + 18, z + h + 24, 0, 0, 40);
+    const wave = Math.sin(state.time * 3) * 0.03;
+    drawWallQuad([
+      [x + 0.51, y + 0.51, z + h + 22],
+      [x + 0.85 + wave, y + 0.51 + wave, z + h + 23],
+      [x + 0.85 + wave, y + 0.51 + wave, z + h + 25],
+      [x + 0.51, y + 0.51, z + h + 26]
+    ], 1, 0, hsl(210, 80, 55));
+
+    if (isNight()) {
+      const top = worldToScreen(x + 0.5, y + 0.5, z + h + 20);
+      const grd = ctx.createRadialGradient(top.x, top.y, 0, top.x, top.y, 26 * cam.cz);
+      grd.addColorStop(0, 'rgba(255,220,100,0.6)');
+      grd.addColorStop(1, 'rgba(255,220,100,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(top.x, top.y, 26 * cam.cz, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawTree(x, y, b, z) {
+    const cx = x + 0.5, cy = y + 0.5;
+    const s  = (0.85 + hash(x * 7.3, y * 13.7) * 0.45) * (1 + b.anim * 0.15);
+    const sway = Math.sin(state.time * 1.6 + x * 0.7 + y * 1.3) * 0.05;
+    drawBlockFull(cx - 0.055, cy - 0.055, cx + 0.055, cy + 0.055, z, z + 7, 28, 42, 32);
+    drawConeW(cx + sway, cy, z + 5,  0.30 * s, 17 * s, { h: 130, s: 45, l: 40 });
+    drawConeW(cx + sway * 2, cy, z + 11, 0.22 * s, 13 * s, { h: 136, s: 50, l: 50 });
+  }
+
+  function drawConeW(cx, cy, zb, r, h, col) {
+    const N = 8;
+    const apex = worldToScreen(cx, cy, zb + h);
+    const pts = [];
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      pts.push({
+        a,
+        p: worldToScreen(cx + Math.cos(a) * r, cy + Math.sin(a) * r, zb)
+      });
+    }
+    for (let i = 0; i < N; i++) {
+      const p0 = pts[i], p1 = pts[(i + 1) % N];
+      const am = p0.a + Math.PI / N;
+      const f = (Math.cos(am + cam.yaw) + Math.sin(am + cam.yaw)) / Math.SQRT2;
+      if (f <= 0) continue;
+      fillPoly([p0.p, p1.p, apex], hsl(col.h, col.s, col.l * (0.6 + 0.4 * f)));
+    }
+  }
+
+  function drawPark(x, y, b, z) {
+    const m = 0.12;
+    drawWallQuad([
+      [x + m, y + m, z + 0.25], [x + 1 - m, y + m, z + 0.25],
+      [x + 1 - m, y + 1 - m, z + 0.25], [x + m, y + 1 - m, z + 0.25]
+    ], 1, 1, hsl(100, 40, 56));
+
+    drawConeW(x + 0.32, y + 0.34, z + 2, 0.13, 10, { h: 130, s: 45, l: 44 });
+    drawConeW(x + 0.68, y + 0.63, z + 2, 0.15, 12, { h: 134, s: 48, l: 50 });
+
+    const fp = worldToScreen(x + 0.5, y + 0.5, z + 1.2);
+    ctx.fillStyle = hsl(340, 80, 70);
+    ctx.beginPath();
+    ctx.arc(fp.x, fp.y, 2 * cam.cz, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawStructure(x, y, b, z) {
+    switch (b.kind) {
+      case 'house':     drawHouse(x, y, b, z); break;
+      case 'store':     drawStore(x, y, b, z); break;
+      case 'mercearia': drawMercearia(x, y, b, z); break;
+      case 'mercado':   drawMercado(x, y, b, z); break;
+      case 'shop':      drawShopping(x, y, b, z); break;
+      case 'clinic':    drawClinic(x, y, b, z); break;
+      case 'school':    drawSchool(x, y, b, z); break;
+      case 'police':    drawPolice(x, y, b, z); break;
+      case 'tower':     drawTower(x, y, b, z); break;
+      case 'capital':   drawCapital(x, y, b, z); break;
+      case 'tree':      drawTree(x, y, b, z); break;
+      case 'park':      drawPark(x, y, b, z); break;
+    }
+  }
+
+  /* =========================================================
+     14. TILE + ESTRADAS
+     ========================================================= */
+  function drawRoadMarkings(x, y, z) {
+    const cx = x + 0.5, cy = y + 0.5, zz = z + 0.4;
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(250,235,170,0.72)';
+    ctx.lineWidth = 2.2 * cam.cz;
+    ctx.lineCap = 'round';
+    let any = false;
+    for (const [dx, dy] of dirs) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) continue;
+      if (tiles[nx][ny].type !== 'road') continue;
+      any = true;
+      const p0 = worldToScreen(cx, cy, zz);
+      const p1 = worldToScreen(cx + dx * 0.5, cy + dy * 0.5, zz);
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+    }
+    if (any) ctx.stroke();
+  }
+
+  function drawTile(x, y, time) {
+    const t = tiles[x][y];
+    if (!t) return;
+    const def = TERRAIN[t.type];
+    const n = (hash(x, y) - 0.5) * 6;
+    let l = def.l + n;
+    let z = def.z;
+    if (t.type === 'water') {
+      const wave = Math.sin(time * 1.7 + x * 0.7 + y * 0.7);
+      l += wave * 4.5;
+      z += wave * 0.9;
+    }
+    // Bloco do tile: 4 faces + topo
+    drawBlockFull(x, y, x + 1, y + 1, BASE_Z, z, DIRT.h, DIRT.s, DIRT.l);
+    // Topo do tile (pintura colorida em cima)
+    drawTopFace(x, y, z, hsl(def.h, def.s, l));
+
+    if (t.building) drawStructure(x, y, t.building, z);
+    else if (t.type === 'road') drawRoadMarkings(x, y, z);
+  }
+
+  function drawTopFace(x, y, z, color) {
+    const p1 = worldToScreen(x, y, z);
+    const p2 = worldToScreen(x + 1, y, z);
+    const p3 = worldToScreen(x + 1, y + 1, z);
+    const p4 = worldToScreen(x, y + 1, z);
+    fillPoly([p1, p2, p3, p4], color);
+  }
+
+  /* =========================================================
+     15. NPCs / CARROS / PARTÍCULAS
+     ========================================================= */
+  const NPC_NAMES = ['Ana','Bia','Caio','Duda','Edu','Fê','Gil','Hugo','Ivo','Jú',
+                     'Kaio','Léo','Mel','Nina','Otto','Pia','Rui','Sara','Tom','Vic'];
+
+  function spawnNPC() {
+    const houses = [];
+    for (let x = 0; x < MAP_W; x++)
+      for (let y = 0; y < MAP_H; y++) {
+        const b = tiles[x][y].building;
+        if (b && (b.kind === 'house' || b.kind === 'tower')) houses.push({ x, y });
+      }
+    if (!houses.length) return;
+    const home = houses[(Math.random() * houses.length) | 0];
+    const dest = pickDestination();
+    if (!dest) return;
+    npcs.push({
+      x: home.x + 0.5, y: home.y + 0.5,
+      target: { x: dest.x + 0.5, y: dest.y + 0.5 },
+      home: { x: home.x, y: home.y },
+      name: NPC_NAMES[(Math.random() * NPC_NAMES.length) | 0],
+      color: Math.random() * 360,
+      speed: 0.6 + Math.random() * 0.4,
+      wait: 0,
+      mood: '🚶',
+      state: 'walking',
+      bob: Math.random() * Math.PI * 2
+    });
+  }
+
+  function pickDestination() {
+    const dests = [];
+    for (let x = 0; x < MAP_W; x++)
+      for (let y = 0; y < MAP_H; y++) {
+        const b = tiles[x][y].building;
+        if (b && (b.kind === 'store' || b.kind === 'mercearia' || b.kind === 'mercado' ||
+                  b.kind === 'shop' || b.kind === 'clinic' || b.kind === 'school' ||
+                  b.kind === 'park' || b.kind === 'police'))
+          dests.push({ x, y });
+      }
+    if (!dests.length) return null;
+    return dests[(Math.random() * dests.length) | 0];
+  }
+
+  function updateNPCs(dt) {
+    for (let i = npcs.length - 1; i >= 0; i--) {
+      const n = npcs[i];
+      n.bob += dt * 8;
+      if (n.wait > 0) { n.wait -= dt; continue; }
+      const dx = n.target.x - n.x;
+      const dy = n.target.y - n.y;
+      const d = Math.hypot(dx, dy);
+      if (d < 0.06) {
+        if (n.state === 'walking') {
+          n.state = 'visiting';
+          n.wait = 1.5 + Math.random() * 2;
+          n.mood = ['🛍️','☕','📚','💊','🌳','🍔','😊'][(Math.random()*7)|0];
+        } else {
+          n.target = { x: n.home.x + 0.5, y: n.home.y + 0.5 };
+          n.state = 'walking';
+          n.mood = '🚶';
+        }
+      } else {
+        const step = Math.min(d, n.speed * dt);
+        n.x += dx / d * step;
+        n.y += dy / d * step;
+      }
+    }
+    const maxNPCs = Math.min(24, Math.floor(state.pop / 6) + 3);
+    if (npcs.length < maxNPCs && Math.random() < 0.05) spawnNPC();
+    while (npcs.length > maxNPCs) npcs.pop();
+  }
+
+  function drawNPCs() {
+    for (const n of npcs) {
+      const tx = Math.floor(n.x), ty = Math.floor(n.y);
+      if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) continue;
+      const tz = TERRAIN[tiles[tx][ty].type]?.z || 0;
+      const bob = Math.sin(n.bob) * 0.5;
+      const pt = worldToScreen(n.x, n.y, tz + 4 + bob);
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(pt.x, pt.y + 6 * cam.cz, 5 * cam.cz, 2.5 * cam.cz, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = hsl(n.color, 65, 55);
+      ctx.beginPath();
+      ctx.ellipse(pt.x, pt.y, 3.5 * cam.cz, 6 * cam.cz, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = hsl(30, 40, 75);
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y - 6 * cam.cz, 3 * cam.cz, 0, Math.PI * 2);
+      ctx.fill();
+      if (n.wait > 0 || Math.sin(state.time * 2 + n.bob) > 0.85) {
+        ctx.font = `${Math.round(9 * cam.cz)}px system-ui`;
+        ctx.textAlign = 'center';
+        ctx.fillText(n.mood, pt.x, pt.y - 11 * cam.cz);
+        ctx.textAlign = 'left';
+      }
+    }
+  }
+
+  function spawnCar() {
+    const roads = [];
+    for (let x = 0; x < MAP_W; x++)
+      for (let y = 0; y < MAP_H; y++)
+        if (tiles[x][y].type === 'road') roads.push({ x, y });
+    if (roads.length < 2) return;
+    const start = roads[(Math.random() * roads.length) | 0];
+    cars.push({
+      x: start.x + 0.5, y: start.y + 0.5,
+      dir: [1, 0],
+      speed: 1.2 + Math.random() * 0.8,
+      color: Math.random() * 360,
+      turnTimer: 0
+    });
+  }
+
+  function updateCars(dt) {
+    for (let i = cars.length - 1; i >= 0; i--) {
+      const c = cars[i];
+      c.turnTimer -= dt;
+      const tx = Math.floor(c.x);
+      const ty = Math.floor(c.y);
+      const cxT = tx + 0.5, cyT = ty + 0.5;
+      const distToCenter = Math.hypot(c.x - cxT, c.y - cyT);
+
+      if (distToCenter < 0.06 && c.turnTimer <= 0) {
+        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        const valid = dirs.filter(([dx,dy]) => {
+          const nx = tx + dx, ny = ty + dy;
+          return nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H && tiles[nx][ny].type === 'road';
+        });
+        if (valid.length === 0) { cars.splice(i, 1); continue; }
+        const noBack = valid.filter(([dx,dy]) => !(dx === -c.dir[0] && dy === -c.dir[1]));
+        const pool = noBack.length ? noBack : valid;
+        c.dir = pool[(Math.random() * pool.length) | 0];
+        c.turnTimer = 0.3;
+      }
+      c.x += c.dir[0] * c.speed * dt;
+      c.y += c.dir[1] * c.speed * dt;
+
+      const nx = Math.floor(c.x), ny = Math.floor(c.y);
+      if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H || tiles[nx][ny].type !== 'road') {
+        c.x = tx + 0.5 + c.dir[0] * 0.49;
+        c.y = ty + 0.5 + c.dir[1] * 0.49;
+        c.turnTimer = 0;
+      }
+    }
+    const maxCars = Math.min(14, Math.floor(state.pop / 15) + 1);
+    if (cars.length < maxCars && Math.random() < 0.04) spawnCar();
+  }
+
+  function drawCars() {
+    for (const c of cars) {
+      const pt = worldToScreen(c.x, c.y, 4.5);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(pt.x, pt.y + 3 * cam.cz, 7 * cam.cz, 3.5 * cam.cz, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const p0 = worldToScreen(c.x, c.y, 4.5);
+      const p1 = worldToScreen(c.x + c.dir[0] * 0.3, c.y + c.dir[1] * 0.3, 4.5);
+      const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+
+      ctx.save();
+      ctx.translate(pt.x, pt.y);
+      ctx.rotate(angle);
+      ctx.fillStyle = hsl(c.color, 70, 55);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 7 * cam.cz, 3.5 * cam.cz, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = hsl(c.color, 70, 40);
+      ctx.beginPath();
+      ctx.ellipse(-1 * cam.cz, 0, 4 * cam.cz, 2.8 * cam.cz, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = isNight() ? 'rgba(255,250,180,0.95)' : 'rgba(255,255,220,0.7)';
+      ctx.beginPath();
+      ctx.arc(6 * cam.cz, -1 * cam.cz, 1.2 * cam.cz, 0, Math.PI * 2);
+      ctx.arc(6 * cam.cz, 1 * cam.cz, 1.2 * cam.cz, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function spawnParticles(x, y, z, count, hue) {
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x, y, z: z + 2,
+        vx: (Math.random() - 0.5) * 0.08,
+        vy: (Math.random() - 0.5) * 0.08,
+        vz: 0.15 + Math.random() * 0.25,
+        life: 1,
+        decay: 0.6 + Math.random() * 0.5,
+        hue: hue + Math.random() * 30 - 15,
+        size: 1.5 + Math.random() * 2
+      });
+    }
+    // Cap de partículas
+    if (particles.length > 200) particles.splice(0, particles.length - 200);
+  }
+
+  function updateEffects(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.z += p.vz;
+      p.vz -= 0.35 * dt;
+      p.life -= p.decay * dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (const col of tiles) for (const t of col) {
+      if (t.building && t.building.anim > 0) {
+        t.building.anim = Math.max(0, t.building.anim - dt * 2.5);
+      }
+    }
+  }
+
+  function drawEffects() {
+    for (const p of particles) {
+      const pt = worldToScreen(p.x, p.y, p.z);
+      ctx.fillStyle = hsl(p.hue, 90, 65, p.life);
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, p.size * p.life * cam.cz, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function updateClouds(dt) {
+    for (const c of clouds) {
+      c.x += c.speed * dt;
+      if (c.x > MAP_W + 4) { c.x = -MAP_W - 4; c.y = Math.random() * MAP_H * 2 - MAP_H * 0.5; }
+    }
+  }
+
+  function drawClouds() {
+    for (const c of clouds) {
+      const alpha = 0.28 * (0.5 + 0.5 * Math.sin(c.x * 0.3));
+      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.6})`;
+      for (let i = 0; i < c.puffs; i++) {
+        const ox = (i - c.puffs / 2) * 0.4;
+        const pt = worldToScreen(c.x + ox, c.y + Math.sin(i * 1.7) * 0.3, c.z);
+        ctx.beginPath();
+        ctx.ellipse(pt.x, pt.y, 20 * c.s * cam.cz, 12 * c.s * cam.cz, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  function isNight() {
+    return state.dayTime < 0.22 || state.dayTime > 0.78;
+  }
+
+  function getSkyTint() {
+    const t = state.dayTime;
+    let r, g, b;
+    if (t < 0.2) {
+      const k = t / 0.2;
+      r = lerp(30, 80, k); g = lerp(20, 40, k); b = lerp(60, 30, k);
+    } else if (t < 0.4) {
+      const k = (t - 0.2) / 0.2;
+      r = lerp(80, 0, k); g = lerp(40, 0, k); b = lerp(30, 0, k);
+    } else if (t < 0.65) {
+      r = g = b = 0;
+    } else if (t < 0.85) {
+      const k = (t - 0.65) / 0.2;
+      r = lerp(0, 200, k); g = lerp(0, 80, k); b = lerp(0, 50, k);
+    } else {
+      const k = (t - 0.85) / 0.15;
+      r = lerp(200, 30, k); g = lerp(80, 20, k); b = lerp(50, 60, k);
+    }
+    return { r, g, b };
+  }
+
+  /* =========================================================
+     16. RENDER
+     ========================================================= */
+  function render(time) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    const tint = getSkyTint();
+    const skyTop = `rgb(${Math.floor(18 + tint.r * 0.5)},${Math.floor(28 + tint.g * 0.5)},${Math.floor(48 + tint.b * 0.5)})`;
+    const skyBot = `rgb(${Math.floor(7 + tint.r * 0.3)},${Math.floor(11 + tint.g * 0.3)},${Math.floor(18 + tint.b * 0.3)})`;
+    const bg = ctx.createRadialGradient(W * 0.5, H * 0.32, 40, W * 0.5, H * 0.5, Math.max(W, H) * 0.85);
+    bg.addColorStop(0, skyTop);
+    bg.addColorStop(1, skyBot);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    if (isNight()) {
+      const starAlpha = clamp((0.22 - state.dayTime) / 0.22, 0, 1);
+      for (let i = 0; i < 50; i++) {
+        const sx = (hash(i * 3.1, 7) * W * 0.9 + state.time * 2) % W;
+        const sy = hash(i * 5.7, 11) * H * 0.4;
+        const tw = 0.5 + 0.5 * Math.sin(state.time * 3 + i);
+        ctx.fillStyle = `rgba(255,255,255,${starAlpha * tw * 0.8})`;
+        ctx.fillRect(sx, sy, 1.5, 1.5);
+      }
+    }
+
+    drawClouds();
+
+    // Ordenação por profundidade relativa à câmera
+    const c = Math.cos(cam.yaw), s = Math.sin(cam.yaw);
+    const tileList = [];
+    for (let x = 0; x < MAP_W; x++) {
+      for (let y = 0; y < MAP_H; y++) {
+        const mx = x + 0.5 - MAP_W / 2;
+        const my = y + 0.5 - MAP_H / 2;
+        const rx = mx * c - my * s;
+        const ry = mx * s + my * c;
+        tileList.push({ x, y, d: rx + ry });
+      }
+    }
+    tileList.sort((a, b) => a.d - b.d);
+    for (const t of tileList) drawTile(t.x, t.y, time);
+
+    drawNPCs();
+    drawCars();
+
+    // Hover
+    if (hover.x >= 0 && hover.x < MAP_W && hover.y >= 0 && hover.y < MAP_H) {
+      const t = tiles[hover.x][hover.y];
+      if (t) {
+        const z = TERRAIN[t.type].z + 0.6;
+        const ok = canPlace(hover.x, hover.y);
+        const pts = [
+          worldToScreen(hover.x, hover.y, z),
+          worldToScreen(hover.x + 1, hover.y, z),
+          worldToScreen(hover.x + 1, hover.y + 1, z),
+          worldToScreen(hover.x, hover.y + 1, z)
+        ];
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < 4; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.closePath();
+        const pulse = 0.5 + 0.5 * Math.sin(state.time * 5);
+        ctx.fillStyle = ok
+          ? `rgba(255,255,255,${0.10 + pulse * 0.10})`
+          : `rgba(255,70,70,${0.15 + pulse * 0.12})`;
+        ctx.fill();
+        ctx.strokeStyle = ok ? 'rgba(255,255,255,0.9)' : 'rgba(255,90,90,0.95)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    // Capital radius
+    if (state.capitalPos) {
+      const cx = state.capitalPos.x + 0.5;
+      const cy = state.capitalPos.y + 0.5;
+      const r = 6;
+      ctx.beginPath();
+      for (let i = 0; i <= 32; i++) {
+        const a = (i / 32) * Math.PI * 2;
+        const px = cx + Math.cos(a) * r;
+        const py = cy + Math.sin(a) * r;
+        const pt = worldToScreen(px, py, 0.5);
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.strokeStyle = `rgba(255,200,100,${0.35 + 0.15 * Math.sin(state.time * 2)})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = `rgba(255,200,100,${0.05 + 0.03 * Math.sin(state.time * 2)})`;
+      ctx.fill();
+    }
+
+    drawEffects();
+
+    if (isNight()) {
+      const grd = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.9);
+      grd.addColorStop(0, 'rgba(0,10,30,0)');
+      grd.addColorStop(1, 'rgba(0,10,30,0.4)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  /* =========================================================
+     17. REGRAS / ECONOMIA / EXPANSÃO
+     ========================================================= */
+  function canPlace(x, y) {
+    if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) return false;
+    const tile = tiles[x][y];
+    if (!tile) return false;
+    const tool = state.tool;
+    if (tool === 'bulldoze') return true;
+    if (tool === 'grass' || tool === 'sand' || tool === 'water') return tile.type !== tool;
+    if (tool === 'road') return tile.type !== 'road' && tile.type !== 'water';
+    const def = STRUCTS[tool];
+    if (!def) return false;
+    if (tool === 'capital' && state.capitalPlaced) return false;
+    if (tool === 'capital' && state.pop < 50) return false;
+    if (tile.type === 'water') return false;
+    if (tile.building) return false;
+    return state.money >= def.cost;
+  }
+
+  function tryPlace(x, y) {
+    if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) return;
+    const tile = tiles[x][y];
+    if (!tile) return;
+    const tool = state.tool;
+
+    if (tool === 'bulldoze') {
+      if (tile.building) {
+        if (tile.building.kind === 'capital') {
+          state.capitalPlaced = false;
+          state.capitalPos = null;
+        }
+        spawnParticles(x + 0.5, y + 0.5, TERRAIN[tile.type].z + 4, 12, 20);
+        SFX.bulldoze();
+        tile.building = null;
+        recalc();
+        countFreeTiles();
+        return;
+      }
+      if (tile.type !== 'grass') {
+        spawnParticles(x + 0.5, y + 0.5, TERRAIN[tile.type].z + 3, 6, 200);
+        SFX.bulldoze();
+        tile.type = 'grass';
+        recalc();
+        countFreeTiles();
+        return;
+      }
+      return;
+    }
+
+    if (tool === 'grass' || tool === 'sand' || tool === 'water') {
+      if (tile.type === tool) return;
+      if (state.money < TERRAIN_TOOLS[tool]) return noMoney();
+      state.money -= TERRAIN_TOOLS[tool];
+      tile.type = tool;
+      tile.building = null;
+      spawnParticles(x + 0.5, y + 0.5, TERRAIN[tool].z + 2, 5, tool === 'water' ? 200 : 40);
+      SFX.place2();
+      recalc();
+      countFreeTiles();
+      return;
+    }
+
+    if (tool === 'road') {
+      if (tile.type === 'road' || tile.type === 'water') return;
+      if (state.money < TERRAIN_TOOLS.road) return noMoney();
+      state.money -= TERRAIN_TOOLS.road;
+      tile.type = 'road';
+      tile.building = null;
+      spawnParticles(x + 0.5, y + 0.5, 4, 5, 30);
+      SFX.place();
+      recalc();
+      countFreeTiles();
+      return;
+    }
+
+    const def = STRUCTS[tool];
+    if (!def) return;
+    if (tool === 'capital') {
+      if (state.capitalPlaced) { toast('Capital já construída!', 'warn', '🏛️'); return; }
+      if (state.pop < 50) { toast('Precisa de 50+ pop', 'warn', '👥'); SFX.error(); return; }
+    }
+    if (tile.type === 'water' || tile.building) return;
+    if (state.money < def.cost) return noMoney();
+
+    state.money -= def.cost;
+    tile.building = { kind: tool, level: 1, anim: 1 };
+
+    if (tool === 'capital') {
+      state.capitalPlaced = true;
+      state.capitalPos = { x, y };
+      spawnParticles(x + 0.5, y + 0.5, 10, 40, 45);
+      SFX.capital();
+      toast('🏛️ Capital construída!', 'good', '🏛️');
+    } else {
+      spawnParticles(x + 0.5, y + 0.5, TERRAIN[tile.type].z + 3, 10,
+        tool === 'tree' ? 130 : tool === 'park' ? 340 : 30);
+      SFX.place();
+    }
+    recalc();
+    countFreeTiles();
+    // Auto-expansão: verifica se precisa expandir
+    if (state.autoExpand) maybeAutoExpand();
+  }
+
+  function recalc() {
+    let pop = 0, inc = 0;
+    for (let x = 0; x < MAP_W; x++) {
+      for (let y = 0; y < MAP_H; y++) {
+        const b = tiles[x][y]?.building;
+        if (!b) continue;
+        const d = STRUCTS[b.kind];
+        if (!d) continue;
+        let mult = 1;
+        if (state.capitalPos) {
+          const dist = Math.hypot(x - state.capitalPos.x, y - state.capitalPos.y);
+          if (dist < 6) mult = 1 + (1 - dist / 6) * 0.5;
+        }
+        pop += Math.round(d.pop * b.level);
+        inc += d.income * b.level * mult;
+      }
+    }
+    state.pop = Math.round(pop);
+    state.income = inc;
+  }
+
+  function hasRoadNear(x, y) {
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) continue;
+        if (tiles[nx][ny].type === 'road') return true;
+      }
+    return false;
+  }
+
+  function tryGrow() {
+    const cands = [];
+    for (let x = 0; x < MAP_W; x++)
+      for (let y = 0; y < MAP_H; y++) {
+        const b = tiles[x][y]?.building;
+        if (!b || b.level >= 3) continue;
+        if (b.kind === 'tree' || b.kind === 'park' || b.kind === 'capital') continue;
+        if (!hasRoadNear(x, y)) continue;
+        cands.push([x, y]);
+      }
+    if (!cands.length) return;
+    const [x, y] = cands[(Math.random() * cands.length) | 0];
+    const b = tiles[x][y].building;
+    b.level++;
+    b.anim = 1;
+    const d = STRUCTS[b.kind];
+    spawnParticles(x + 0.5, y + 0.5, 8, 15, 50);
+    toast(`${d.icon} ${d.name} → Nv.${b.level}`, 'good');
+    SFX.upgrade();
+    recalc();
+  }
+
+  /* =========================================================
+     18. AUTO-EXPANSÃO
+     ========================================================= */
+  function expandCost() {
+    const level = Math.floor((MAP_W - 22) / EXPANSION_STEP);
+    return Math.round(EXPANSION_BASE_COST * Math.pow(1.5, level));
+  }
+
+  function maybeAutoExpand() {
+    if (MAP_W >= MAP_MAX) return;
+    if (freeTiles < AUTO_EXPAND_FREE_TILES && state.pop > 15) {
+      // Auto-expande gratuitamente se tiver espaço mínimo e dinheiro
+      if (state.money >= expandCost() * 0.6) {
+        doExpand(true);
+      } else {
+        // Avisa uma vez
+        if (!maybeAutoExpand._warned) {
+          toast('Pouco espaço! Junte dinheiro para expandir.', 'warn', '🗺️');
+          maybeAutoExpand._warned = true;
+          setTimeout(() => { maybeAutoExpand._warned = false; }, 20000);
+        }
+      }
+    }
+  }
+
+  function doExpand(isAuto) {
+    const cost = isAuto ? Math.round(expandCost() * 0.6) : expandCost();
+    if (state.money < cost) return false;
+    if (MAP_W >= MAP_MAX) return false;
+
+    state.money -= cost;
+    const step = EXPANSION_STEP;
+    const oldW = MAP_W, oldH = MAP_H;
+    MAP_W += step; MAP_H += step;
+    const offX = Math.floor(step / 2);
+    const offY = Math.floor(step / 2);
+
+    const newTiles = [];
+    for (let x = 0; x < MAP_W; x++) {
+      newTiles[x] = [];
+      for (let y = 0; y < MAP_H; y++) newTiles[x][y] = { type: 'grass', building: null, anim: 0 };
+    }
+    for (let x = 0; x < oldW; x++)
+      for (let y = 0; y < oldH; y++)
+        newTiles[x + offX][y + offY] = tiles[x][y];
+
+    for (let x = 0; x < MAP_W; x++)
+      for (let y = 0; y < MAP_H; y++) {
+        const isNew = x < offX || y < offY || x >= oldW + offX || y >= oldH + offY;
+        if (!isNew) continue;
+        const n = Math.sin(x * 0.31 + 1.7) * Math.cos(y * 0.27) +
+                  Math.sin((x + y) * 0.19) * 0.75 + (hash(x, y) - 0.5) * 0.5;
+        if (n < -0.72) newTiles[x][y].type = 'water';
+        else if (n < -0.50) newTiles[x][y].type = 'sand';
+      }
+
+    for (let x = 0; x < MAP_W; x++) { newTiles[x][0].type = 'grass'; newTiles[x][MAP_H-1].type = 'grass'; }
+    for (let y = 0; y < MAP_H; y++) { newTiles[0][y].type = 'grass'; newTiles[MAP_W-1][y].type = 'grass'; }
+
+    if (state.capitalPos) state.capitalPos = { x: state.capitalPos.x + offX, y: state.capitalPos.y + offY };
+    for (const n of npcs) { n.x += offX; n.y += offY; n.home.x += offX; n.home.y += offY; n.target.x += offX; n.target.y += offY; }
+    for (const c of cars) { c.x += offX; c.y += offY; }
+
+    tiles = newTiles;
+    genClouds();
+    recalc();
+    countFreeTiles();
+    spawnParticles(MAP_W / 2, MAP_H / 2, 20, 25, 45);
+    SFX.expand();
+    if (isAuto) toast(`🗺️ Auto-expansão ${MAP_W}×${MAP_H}`, 'good', '🗺️');
+    else toast(`🗺️ Mapa ${MAP_W}×${MAP_H}`, 'good', '🗺️');
+    return true;
+  }
+
+  /* =========================================================
+     19. UPDATE
+     ========================================================= */
+  function update(dt) {
+    state.money += state.income * dt;
+    state.dayTime += dt / DAY_LENGTH;
+    if (state.dayTime >= 1) { state.dayTime -= 1; state.day++; }
+
+    growTimer += dt;
+    if (growTimer >= 5) { growTimer = 0; tryGrow(); }
+
+    updateEffects(dt);
+    updateClouds(dt);
+    updateNPCs(dt);
+    updateCars(dt);
+
+    const k = 1 - Math.pow(0.001, dt);
+    cam.cx = lerp(cam.cx, -cam.tx * TILE_W * 0.5, k * 2);
+    cam.cy = lerp(cam.cy, -cam.ty * TILE_H * 0.5, k * 2);
+    cam.cz = lerp(cam.cz, cam.tzoom, k * 1.5);
+
+    updateCompass();
+    state.time += dt;
+    if (Math.floor(state.time * 4) % 4 === 0) updateExpandUI();
+  }
+
+  function updateCompass() {
+    const deg = -cam.yaw * 180 / Math.PI;
+    const needle = document.getElementById('compassNeedle');
+    if (needle) needle.style.transform = `rotate(${deg}deg)`;
+  }
+
+  /* =========================================================
+     20. HUD
+     ========================================================= */
+  const $money = document.getElementById('money');
+  const $pop   = document.getElementById('pop');
+  const $inc   = document.getElementById('inc');
+  const $clock = document.getElementById('clock');
+  const $statMoney = document.getElementById('statMoney');
+
+  let lastHud = { m: '', p: '', i: '', c: '' };
+  function updateHUD() {
+    const m = '$' + Math.floor(state.money);
+    const p = String(state.pop);
+    const i = '$' + state.income.toFixed(1);
+    const hours = Math.floor(state.dayTime * 24);
+    const mins  = Math.floor((state.dayTime * 24 * 60) % 60);
+    const icon  = isNight() ? '🌙' : (state.dayTime < 0.45 || state.dayTime > 0.6 ? '☀️' : '🌤️');
+    const c = `${icon} ${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')} D${state.day}`;
+
+    if (m !== lastHud.m) { $money.textContent = m; lastHud.m = m; }
+    if (p !== lastHud.p) { $pop.textContent   = p; lastHud.p = p; }
+    if (i !== lastHud.i) { $inc.textContent   = i; lastHud.i = i; }
+    if (c !== lastHud.c) { $clock.textContent = c; lastHud.c = c; }
+
+    document.querySelectorAll('.tool').forEach(btn => {
+      const t = btn.dataset.tool;
+      const def = STRUCTS[t];
+      const cost = def ? def.cost : (TERRAIN_TOOLS[t] || 0);
+      let locked = state.money < cost && t !== 'bulldoze';
+      if (t === 'capital') {
+        if (state.capitalPlaced || state.pop < 50) locked = true;
+      }
+      btn.classList.toggle('locked', locked);
+    });
+  }
+
+  let flashTimeout = null;
+  function noMoney() {
+    $statMoney.classList.add('flash');
+    clearTimeout(flashTimeout);
+    flashTimeout = setTimeout(() => $statMoney.classList.remove('flash'), 340);
+    toast('Dinheiro insuficiente!', 'warn', '💸');
+    SFX.error();
+  }
+
+  const $toasts = document.getElementById('toasts');
+  function toast(msg, type, icon) {
+    const el = document.createElement('div');
+    el.className = 'toast' + (type ? ' ' + type : '');
+    el.innerHTML = (icon ? `<i>${icon}</i>` : '') + `<span>${msg}</span>`;
+    $toasts.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+    while ($toasts.children.length > 4) $toasts.firstChild.remove();
+  }
+
+  const $expandPanel = document.getElementById('expandPanel');
+  const $expandInfo = document.getElementById('expandInfo');
+  const $expandCost = document.getElementById('expandCost');
+  const $btnExpand = document.getElementById('btnExpand');
+
+  function updateExpandUI() {
+    const c = expandCost();
+    $expandCost.textContent = c;
+    $btnExpand.disabled = state.money < c || MAP_W >= MAP_MAX;
+    if (state.autoExpand) {
+      $expandInfo.textContent = `Auto: ${freeTiles} tiles livres (mín ${AUTO_EXPAND_FREE_TILES})`;
+    } else {
+      $expandInfo.textContent = 'Expansão manual';
+    }
+    $expandPanel.classList.toggle('show', state.pop >= 15);
+  }
+
+  /* =========================================================
+     21. INPUT — multitouch
+     ========================================================= */
+  const pointers = new Map();
+  let gesture = {
+    mode: null,
+    startTime: 0,
+    startPos: { x: 0, y: 0 },
+    moved: false,
+    panStart: null,
+    pinchStart: null,
+    lastTile: { x: -1, y: -1 }
+  };
+
+  const TAP_MOVE_THRESHOLD = 8;
+  const TAP_TIME_THRESHOLD = 280;
+
+  function getPinchMid() {
+    const pts = [...pointers.values()];
+    if (pts.length < 2) return null;
+    return {
+      x: (pts[0].x + pts[1].x) / 2,
+      y: (pts[0].y + pts[1].y) / 2,
+      dist: Math.max(1, Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)),
+      angle: Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x)
+    };
+  }
+
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, id: e.pointerId });
+
+    if (pointers.size === 1) {
+      const isRightClick = (e.button === 2) || (e.button === 1) || e.shiftKey;
+      if (isRightClick) {
+        gesture.mode = 'pan';
+        gesture.panStart = { x: e.clientX, y: e.clientY, camx: cam.cx, camy: cam.cy };
+      } else {
+        gesture.mode = 'pending';
+        gesture.startTime = performance.now();
+        gesture.startPos = { x: e.clientX, y: e.clientY };
+        gesture.moved = false;
+        gesture.lastTile = { x: -1, y: -1 };
+      }
+    } else if (pointers.size === 2) {
+      gesture.mode = 'pinch';
+      const mid = getPinchMid();
+      gesture.pinchStart = {
+        dist: mid.dist, angle: mid.angle,
+        zoom: cam.tzoom, yaw: cam.yaw
+      };
+    }
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    const rec = pointers.get(e.pointerId);
+    if (!rec) return;
+    rec.x = e.clientX;
+    rec.y = e.clientY;
+
+    if (gesture.mode === 'pinch' && pointers.size >= 2) {
+      const mid = getPinchMid();
+      if (mid && gesture.pinchStart) {
+        const scale = mid.dist / gesture.pinchStart.dist;
+        cam.tzoom = clamp(gesture.pinchStart.zoom * scale, 0.28, 1.6);
+        let dAng = mid.angle - gesture.pinchStart.angle;
+        while (dAng > Math.PI) dAng -= Math.PI * 2;
+        while (dAng < -Math.PI) dAng += Math.PI * 2;
+        cam.yaw = gesture.pinchStart.yaw + dAng;
+        while (cam.yaw > Math.PI) cam.yaw -= Math.PI * 2;
+        while (cam.yaw < -Math.PI) cam.yaw += Math.PI * 2;
+      }
+      return;
+    }
+
+    if (gesture.mode === 'pan' && gesture.panStart) {
+      cam.cx = gesture.panStart.camx + (e.clientX - gesture.panStart.x);
+      cam.cy = gesture.panStart.camy + (e.clientY - gesture.panStart.y);
+      return;
+    }
+
+    if (gesture.mode === 'pending') {
+      const dx = e.clientX - gesture.startPos.x;
+      const dy = e.clientY - gesture.startPos.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > TAP_MOVE_THRESHOLD) {
+        const tool = state.tool;
+        const isPaint = (tool === 'road' || tool === 'grass' || tool === 'sand' || tool === 'water' || tool === 'bulldoze');
+        if (isPaint) {
+          gesture.mode = 'build';
+          handlePlace(e.clientX, e.clientY);
+        } else {
+          gesture.mode = 'pan';
+          const offsetX = cam.cx - (e.clientX - gesture.startPos.x);
+          const offsetY = cam.cy - (e.clientY - gesture.startPos.y);
+          gesture.panStart = { x: e.clientX, y: e.clientY, camx: offsetX, camy: offsetY };
+        }
+        gesture.moved = true;
+      }
+      return;
+    }
+
+    if (gesture.mode === 'build') {
+      handlePlace(e.clientX, e.clientY);
+      return;
+    }
+
+    if (pointers.size === 0) {
+      const t = screenToTile(e.clientX, e.clientY);
+      hover.x = t.x; hover.y = t.y;
+    }
+  });
+
+  function endPointer(e) {
+    const wasPending = gesture.mode === 'pending';
+    const elapsed = performance.now() - gesture.startTime;
+    pointers.delete(e.pointerId);
+
+    if (wasPending && !gesture.moved && elapsed < TAP_TIME_THRESHOLD && pointers.size === 0) {
+      const t = screenToTile(e.clientX, e.clientY);
+      hover.x = t.x; hover.y = t.y;
+      tryPlace(t.x, t.y);
+    }
+    if (pointers.size === 0) {
+      gesture.mode = null;
+      gesture.panStart = null;
+      gesture.pinchStart = null;
+    } else if (pointers.size === 1) {
+      const p = [...pointers.values()][0];
+      gesture.mode = 'pan';
+      gesture.panStart = { x: p.x, y: p.y, camx: cam.cx, camy: cam.cy };
+    }
+  }
+
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+
+  function handlePlace(sx, sy) {
+    const t = screenToTile(sx, sy);
+    if (t.x === gesture.lastTile.x && t.y === gesture.lastTile.y) return;
+    gesture.lastTile = t;
+    tryPlace(t.x, t.y);
+  }
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    cam.tzoom = clamp(cam.tzoom * Math.exp(-e.deltaY * 0.0012), 0.28, 1.6);
+  }, { passive: false });
+
+  /* =========================================================
+     22. ROTAÇÃO / TECLADO
+     ========================================================= */
+  function rotateCam(dir) {
+    cam.yaw += dir * Math.PI / 2;
+    while (cam.yaw > Math.PI) cam.yaw -= Math.PI * 2;
+    while (cam.yaw < -Math.PI) cam.yaw += Math.PI * 2;
+    SFX.place2();
+  }
+
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    const keyMap = {
+      '1':'house', '2':'tree', '3':'park', '4':'road',
+      '5':'store', '6':'mercearia', '7':'mercado', '8':'shop',
+      '9':'clinic', '0':'school', '-':'police', '=':'tower',
+      'c':'capital', 'C':'capital'
+    };
+    if (keyMap[e.key]) { selectTool(keyMap[e.key]); return; }
+    if (e.key === 'q' || e.key === 'Q') { rotateCam(-1); return; }
+    if (e.key === 'e' || e.key === 'E') { rotateCam(1); return; }
+    if (e.key === 'z' || e.key === 'Z') { cam.yaw = 0; return; }
+    if (e.key === 'f' || e.key === 'F') { cam.tx = MAP_W / 2; cam.ty = MAP_H / 2; return; }
+    if (e.key === 'm' || e.key === 'M') toggleSound();
+    if (e.key === 'n' || e.key === 'N') openNameDialog();
+    if (e.key === 'Escape') selectTool('bulldoze');
+    if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveGame(); }
+    if (e.ctrlKey && e.key === 'o') { e.preventDefault(); loadGame(); }
+  });
+
+  function selectTool(name) {
+    const btn = document.querySelector(`.tool[data-tool="${name}"]`);
+    if (!btn) return;
+    document.querySelectorAll('.tool').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.tool = name;
+  }
+
+  /* =========================================================
+     23. MODAL
+     ========================================================= */
+  const $modal = document.getElementById('modal');
+  const $modalInput = document.getElementById('modalInput');
+  function openNameDialog() {
+    $modalInput.value = state.cityName;
+    $modal.classList.add('show');
+    setTimeout(() => $modalInput.focus(), 50);
+  }
+  function closeModal() { $modal.classList.remove('show'); }
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('modalOk').addEventListener('click', () => {
+    const v = $modalInput.value.trim();
+    if (v) { state.cityName = v; toast(`"${v}"`, 'good', '🏙️'); }
+    closeModal();
+  });
+  $modalInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('modalOk').click();
+    if (e.key === 'Escape') closeModal();
+  });
+  $modal.addEventListener('click', e => { if (e.target === $modal) closeModal(); });
+
+  /* =========================================================
+     24. BOTÕES
+     ========================================================= */
+  document.getElementById('btnSound').addEventListener('click', toggleSound);
+  function toggleSound() {
+    soundOn = !soundOn;
+    document.getElementById('btnSound').textContent = soundOn ? '🔊' : '🔇';
+  }
+  document.getElementById('btnName').addEventListener('click', openNameDialog);
+  document.getElementById('btnSave').addEventListener('click', saveGame);
+  document.getElementById('btnLoad').addEventListener('click', loadGame);
+  document.getElementById('btnFull').addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  });
+  document.getElementById('btnExpand').addEventListener('click', () => doExpand(false));
+  document.getElementById('rotL').addEventListener('click', () => rotateCam(-1));
+  document.getElementById('rotR').addEventListener('click', () => rotateCam(1));
+  document.getElementById('zoomIn').addEventListener('click', () => {
+    cam.tzoom = clamp(cam.tzoom * 1.25, 0.28, 1.6);
+  });
+  document.getElementById('zoomOut').addEventListener('click', () => {
+    cam.tzoom = clamp(cam.tzoom / 1.25, 0.28, 1.6);
+  });
+  document.getElementById('compass').addEventListener('click', () => {
+    cam.yaw = 0;
+    toast('Bússola resetada', 'info', '🧭');
+  });
+
+  /* =========================================================
+     25. SAVE / LOAD — com VERSIONAMENTO E MIGRAÇÃO
+     ========================================================= */
+  const SAVE_VERSION = 3;
+  const SAVE_KEY = 'isocity_v22flashlite_save';
+  const SAVE_KEY_OLD = ['isocity_v22_save', 'isocity_v21_save', 'isocity_save'];
+
+  function saveGame() {
+    try {
+      const data = {
+        version: SAVE_VERSION,
+        savedAt: Date.now(),
+        money: state.money,
+        day: state.day, dayTime: state.dayTime,
+        cityName: state.cityName,
+        capitalPlaced: state.capitalPlaced,
+        capitalPos: state.capitalPos,
+        autoExpand: state.autoExpand,
+        mapW: MAP_W, mapH: MAP_H,
+        tiles: tiles.map(col => col.map(t => ({
+          type: t.type,
+          building: t.building ? { kind: t.building.kind, level: t.building.level } : null
+        })))
+      };
+      // Salva com checksum simples
+      const json = JSON.stringify(data);
+      data.checksum = simpleChecksum(json);
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      toast(`"${state.cityName}" salva!`, 'good', '💾');
+      SFX.coin();
+    } catch (e) {
+      toast('Erro ao salvar', 'warn', '⚠️');
+    }
+  }
+
+  function simpleChecksum(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    }
+    return h;
+  }
+
+  function loadGame() {
+    try {
+      let raw = localStorage.getItem(SAVE_KEY);
+      let usedOld = false;
+      if (!raw) {
+        for (const k of SAVE_KEY_OLD) {
+          raw = localStorage.getItem(k);
+          if (raw) { usedOld = true; break; }
+        }
+      }
+      if (!raw) { toast('Nenhum save', 'warn', '📂'); return; }
+
+      const data = JSON.parse(raw);
+      // Migração/validação
+      const mig = migrateSave(data);
+      if (!mig) { toast('Save inválido', 'warn', '⚠️'); return; }
+
+      applySave(mig);
+      if (usedOld) {
+        toast('Save antigo migrado!', 'good', '📂');
+      } else {
+        toast(`"${state.cityName}" carregada!`, 'good', '📂');
+      }
+      SFX.upgrade();
+    } catch (e) {
+      toast('Erro ao carregar', 'warn', '⚠️');
+    }
+  }
+
+  function migrateSave(data) {
+    if (!data || typeof data !== 'object') return null;
+    // Se tem tiles no formato esperado, aceita
+    if (!data.tiles) return null;
+
+    // Normaliza para o formato atual
+    const out = {
+      version: data.version || 1,
+      money: typeof data.money === 'number' ? data.money : 3600,
+      day: data.day || 1,
+      dayTime: data.dayTime !== undefined ? data.dayTime : 0.25,
+      cityName: data.cityName || 'Nova Aurora',
+      capitalPlaced: !!data.capitalPlaced,
+      capitalPos: data.capitalPos || null,
+      autoExpand: data.autoExpand !== undefined ? !!data.autoExpand : true,
+      mapW: data.mapW || 22,
+      mapH: data.mapH || 22,
+      tiles: data.tiles
+    };
+
+    // Validação do mapa
+    if (out.mapW < 10 || out.mapW > 60) out.mapW = 22;
+    if (out.mapH < 10 || out.mapH > 60) out.mapH = 22;
+    if (!Array.isArray(out.tiles) || out.tiles.length < 5) return null;
+
+    return out;
+  }
+
+  function applySave(save) {
+    state.money = save.money;
+    state.day = save.day;
+    state.dayTime = save.dayTime;
+    state.cityName = save.cityName;
+    state.capitalPlaced = save.capitalPlaced;
+    state.capitalPos = save.capitalPos;
+    state.autoExpand = save.autoExpand;
+    MAP_W = save.mapW;
+    MAP_H = save.mapH;
+
+    tiles = [];
+    for (let x = 0; x < MAP_W; x++) {
+      tiles[x] = [];
+      for (let y = 0; y < MAP_H; y++) {
+        const s = save.tiles[x] && save.tiles[x][y];
+        tiles[x][y] = {
+          type: s ? (s.type || 'grass') : 'grass',
+          building: (s && s.building && STRUCTS[s.building.kind])
+            ? { kind: s.building.kind, level: clamp(s.building.level || 1, 1, 3), anim: 0 }
+            : null,
+          anim: 0
+        };
+      }
+    }
+    npcs = []; cars = [];
+    genClouds();
+    recalc();
+    countFreeTiles();
+    cam.cx = 0; cam.cy = 0; cam.tx = MAP_W / 2; cam.ty = MAP_H / 2;
+    fitCamera();
+  }
+
+  /* =========================================================
+     26. TOOLBAR
+     ========================================================= */
+  document.querySelectorAll('.tool').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('locked')) {
+        if (btn.dataset.tool === 'capital') {
+          if (state.capitalPlaced) toast('Capital já construída', 'warn', '🏛️');
+          else if (state.pop < 50) toast('Precisa de 50+ pop', 'warn', '👥');
+          else toast('Dinheiro insuficiente', 'warn', '💸');
+        } else {
+          toast('Dinheiro insuficiente', 'warn', '💸');
+        }
+        SFX.error();
+        return;
+      }
+      document.querySelectorAll('.tool').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.tool = btn.dataset.tool;
+      const def = STRUCTS[state.tool];
+      if (def) SFX.place2();
+    });
+  });
+
+  /* =========================================================
+     27. RESIZE / LOOP / BOOT
+     ========================================================= */
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width  = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    checkOrientation();
+  }
+
+  function checkOrientation() {
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const lock = document.getElementById('rotateLock');
+    if (isPortrait && isTouch && window.innerWidth < 700) {
+      lock.classList.add('show');
+    } else {
+      lock.classList.remove('show');
+    }
+  }
+
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+  screen.orientation?.addEventListener?.('change', () => setTimeout(resize, 150));
+
+  let last = 0;
+  let hudTimer = 0;
+  function frame(now) {
+    if (!last) last = now;
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    update(dt);
+    render(state.time);
+    hudTimer += dt;
+    if (hudTimer > 0.12) { hudTimer = 0; updateHUD(); }
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  genMap();
+  recalc();
+  cam.tx = MAP_W / 2;
+  cam.ty = MAP_H / 2;
+  fitCamera();
+  cam.cx = 0; cam.cy = 0; cam.cz = cam.tzoom;
+
+  setTimeout(() => toast(`Bem-vindo a ${state.cityName}!`, 'good', '🏙️'), 400);
+  setTimeout(() => toast('Auto-expansão ativa · 1 dedo move, 2 giram', 'info', '💡'), 2500);
+
+  requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>
